@@ -1,0 +1,6 @@
+a.out
+ser
+*.o
+
+.DS_Store
+.vscode
