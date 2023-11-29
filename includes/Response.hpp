@@ -11,6 +11,9 @@ class Response
         std::string status_msg;
 		std::map<std::string, std::string> headers;
 		std::string body;
+
+    public:
+        
 };
 
 #endif
