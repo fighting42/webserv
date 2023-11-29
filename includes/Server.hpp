@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+class Location;
+
 class Server : public FdSet
 {
 	private: 
@@ -14,9 +16,8 @@ class Server : public FdSet
 
 	public:
 		Server();
-		Server(const Server &obj);
-		Server &operator=(const Server &obj);
 		virtual ~Server();
+
 };
 
 #endif
