@@ -6,11 +6,21 @@
 class Request
 {
 	private:
+        std::string req_msg;
 		std::string method;
 		std::string location;
 		std::string version;
 		std::map<std::string, std::string> headers;
 		std::string body;
+    
+    public:
+        Request();
+        ~Request();
+        void ReqParsing();
+        std::vector<std::string> ReqSplit(std::string input, char delimiter);
+        std::string removeSpace(std::string str);
+
+
 };
 
 #endif
