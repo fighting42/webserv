@@ -1,6 +1,7 @@
 a.out
-ser
+a.out.dSYM
 *.o
+ser
 
 .DS_Store
 .vscode
