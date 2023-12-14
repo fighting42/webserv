@@ -26,7 +26,5 @@ class Server
 
 		// getter 만들기
 };
-김예진 화이팅
-지금 해 !!
 
 #endif
