@@ -71,13 +71,3 @@ void Request::ReqParsing(std::string msg)
     // std::cout << this->body << std::endl;
 
 }
-
-
-int main()
-{
-    Request Re;
-    std::string msg;
-
-    msg = "GET http://developer.mozilla.org/ko/docs/Web/HTTP/Message HTTP/1.1\nasdfadsfasdf";
-    Re.ReqParsing(msg);
-}

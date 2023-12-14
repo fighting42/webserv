@@ -8,7 +8,8 @@
 
 class Location;
 
-class Server // : public FdSet
+// : public FdSet
+class Server
 {
 	private: 
 		std::string name;
@@ -19,9 +20,13 @@ class Server // : public FdSet
 		Server();
 		virtual ~Server();
 
-		void		parseConfig(const std::string& path);
-		void		parseDirective(const std::string& dir, const std::string& line);
-		void		parseLocation(const std::string& line);
+		void	parseConfig(const std::string& path);
+		void	parseDirective(const std::string& dir, const std::string& line);
+		void	parseLocation(const std::string& line);
+
+		// getter 만들기
 };
+김예진 화이팅
+지금 해 !!
 
 #endif

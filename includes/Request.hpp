@@ -6,7 +6,7 @@
 class Request
 {
 	private:
-        std::string req_msg;
+    std::string req_msg;
 		std::string method;
 		std::string location;
 		std::string version;
@@ -16,7 +16,7 @@ class Request
     public:
         Request();
         ~Request();
-        void ReqParsing();
+        void ReqParsing(std::string msg);
         std::vector<std::string> ReqSplit(std::string input, char delimiter);
         std::string removeSpace(std::string str);
 
