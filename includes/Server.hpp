@@ -5,6 +5,9 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
+#include <map>
+#include <vector>
 
 class Location;
 
@@ -13,18 +16,22 @@ class Server
 {
 	private: 
 		std::string name;
-		std::string ip;
+		std::string ip; // 아직
 		std::string port;
+		std::map<std::string, std::string> serv; // 아직
+		std::map< std::string, std::map<std::string, std::string> > loc; // std::map<std::string, Location> ???
 
 	public:
 		Server();
 		virtual ~Server();
 
-		void	parseConfig(const std::string& path);
-		void	parseDirective(const std::string& dir, const std::string& line);
-		void	parseLocation(const std::string& line);
+		std::string	getName() const;
+		std::string	getIP() const;
+		std::string	getPort() const;
+		std::map< std::string, std::map<std::string, std::string> > getLoc() const;
 
-		// getter 만들기
+		void	parseDirective(const std::string& dir, const std::string& line);
+		void	parseLocation(std::ifstream& file, std::string& line);
 };
 
 #endif

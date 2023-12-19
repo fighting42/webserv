@@ -1,17 +1,11 @@
 #include "../includes/Webserv.hpp"
-#include "../includes/Server.hpp"
+#include "../includes/Config.hpp"
 
 Webserv::Webserv() {}
 
 Webserv::~Webserv() {}
 
-void	err(std::string str)
-{
-	std::cout << str << std::endl;
-	exit(1);
-}
-
-void    Webserv::initServer(Server conf)
+void    Webserv::initServer(Config conf)
 {
     int server_socket;
     struct sockaddr_in server_addr;

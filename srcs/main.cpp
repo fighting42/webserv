@@ -1,19 +1,25 @@
-#include "../includes/Server.hpp"
+#include "../includes/Config.hpp"
 #include "../includes/Request.hpp"
 #include "../includes/Webserv.hpp"
+
+void	err(std::string str)
+{
+	std::cout << str << std::endl;
+	exit(1);
+}
 
 int main(int argc, char **argv)
 {
     if (argc != 2)
-        return 1; // error 처리 하기
+        err("argc error");
 
-    Server serv;
+    Config  conf;
     Request req;
     Webserv webserv;
 
-    serv.parseConfig(argv[1]);
+    conf.parseConfig(argv[1]);
     req.ReqParsing("GET ./resources/index.html http/1.1\ncontent_length: 9\ncontent_type: text/html");
-    webserv.initServer(serv);
+    webserv.initServer(conf);
 
     return (0);
 }
