@@ -14,58 +14,30 @@ std::string	Server::getPort() const { return port; }
 std::map< std::string, std::map<std::string, std::string> > Server::getLoc() const { return loc; }
 
 
-void	Server::parseLocation(std::ifstream& file, std::string& line)
+bool	Server::parseLocation(std::ifstream& file, std::vector<std::string> tokens, bool flag)
 {
-	size_t pos = line.find("location");
-	if (pos == std::string::npos)
-		return ;
-
-	std::istringstream iss(line);
-	std::string path;
-	iss >> path;
-	iss >> path;
-
-	std::map<std::string, std::string> map;
-	while (std::getline(file, line))
+	if (!flag)
 	{
-		// size_t i = 0;
-		// while (isspace(line[i]))
-		// 	i++;
-		// if (line.find(';') == std::string::npos &&
-		// 	!line.empty() && i == line.length() && line[i] != '#' &&
-		// 	line.find('{') == std::string::npos && line.find('}') == std::string::npos)
-		// 	err("config form error");
-
-		std::istringstream iss(line);
-		std::vector<std::string> tokens;
-		std::string key, token;
-		iss >> key;
-		while (iss >> token) 
-			tokens.push_back(token);
-		for (size_t i = 0; i < tokens.size(); i++) 
-			map.insert(std::pair<std::string, std::string>(tokens[i], key));
-
-		if (line.find('}') != std::string::npos)
-			break;
+		std::map<std::string, std::string> map;
+		loc.insert(std::pair< std::string, std::map<std::string, std::string> >(tokens[1], map));
 	}
-	loc.insert(std::pair< std::string, std::map<std::string, std::string> >(path, map));
+	else
+	{
+		for (size_t i = 1; i < tokens.size(); i++)
+		{
+			if (i == tokens.size() - 1)
+				tokens[i] = tokens[i].substr(0, tokens[i].size() - 1);
+			(--loc.end())->second.insert(std::pair<std::string, std::string>(tokens[i], tokens[0]));			
+		}
+	}
+	return true;
 }
 
-void	Server::parseDirective(const std::string& dir, const std::string& line)
+void	Server::parseDirective(const std::string& dir, std::vector<std::string>& tokens)
 {
-	size_t pos = line.find(dir);
-	if (pos == std::string::npos)
-		return ;
-
-	size_t i = dir.length();
-	while (isspace(line[pos + i]))
-		i++;
-	if (i == dir.length())
-		err("directive error");
-	size_t cnt = line.find(';') - pos - i;
-
+	// 여러개 올 수도 있나???
 	if (dir == "listen")
-		port = line.substr(pos + i, cnt);
+		port = tokens[1].substr(0, tokens[1].size() - 1);
 	else if (dir == "server_name")
-		name = line.substr(pos + i, cnt);
+		name = tokens[1].substr(0, tokens[1].size() - 1);
 }

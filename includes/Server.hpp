@@ -30,8 +30,8 @@ class Server
 		std::string	getPort() const;
 		std::map< std::string, std::map<std::string, std::string> > getLoc() const;
 
-		void	parseDirective(const std::string& dir, const std::string& line);
-		void	parseLocation(std::ifstream& file, std::string& line);
+		void	parseDirective(const std::string& dir, std::vector<std::string>& tokens);
+		bool	parseLocation(std::ifstream& file, std::vector<std::string> tokens, bool);
 };
 
 #endif

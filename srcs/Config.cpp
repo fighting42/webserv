@@ -31,6 +31,7 @@ void	Config::parseConfig(std::string path)
 	while (std::getline(file, line))
 	{
 		int chk = 0;
+		bool flag = false;
 		if (line.find("server") != std::string::npos)
 		{
 			Server *serv = new Server;
@@ -38,17 +39,22 @@ void	Config::parseConfig(std::string path)
 				chk++;
 			while (std::getline(file, line))
 			{
-				size_t i = 0;
-				while (isspace(line[i]))
-					i++;
-				if (line.find(';') == std::string::npos &&
-					!line.empty() && i == line.length() && line[i] != '#' &&
-					line.find('{') == std::string::npos && line.find('}') == std::string::npos)
-					err("config form error");
+				std::istringstream iss(line);
+				std::vector<std::string> tokens;
+				std::string token;
+				while (iss >> token)
+					tokens.push_back(token);
 
-				serv->parseDirective("listen", line);
-				serv->parseDirective("server_name", line);
-				serv->parseLocation(file, line);
+				if (line.find("listen") != std::string::npos)
+					serv->parseDirective("listen", tokens);
+				else if (line.find("server_name") != std::string::npos)
+					serv->parseDirective("server_name", tokens);
+				else if (line.find("location") != std::string::npos || flag)
+					flag = serv->parseLocation(file, tokens, flag);
+
+				if (flag && line.find('}') != std::string::npos)
+					flag = false;
+				
 				// 나머지 map(serv.serv)에 넣기 ?
 
 				if (line.find('{') != std::string::npos)
@@ -68,7 +74,6 @@ void	Config::parseConfig(std::string path)
 // 	Config c;
 // 	if (argc == 2)
 // 		c.parseConfig(argv[1]);
-
 // 	std::vector<Server> s = c.getConfig();
 // 	for (std::vector<Server>::iterator s_it = s.begin(); s_it != s.end(); ++s_it)
 // 	{
@@ -79,7 +84,10 @@ void	Config::parseConfig(std::string path)
 // 		for (std::map<std::string, std::map<std::string, std::string> >::iterator l_it = l.begin(); l_it != l.end(); ++l_it)
 // 		{
 // 			std::cout << "location: " << l_it->first << std::endl;
-
+// 			std::map<std::string, std::string> m = l_it->second;
+// 			for (std::map<std::string, std::string>::iterator it = m.begin(); it != m.end(); ++it)
+// 				std::cout << it->second << " " << it->first << std::endl;
 // 		}
+// 		std::cout << std::endl;
 // 	}
 // }
