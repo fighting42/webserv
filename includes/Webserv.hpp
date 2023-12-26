@@ -15,7 +15,7 @@
 
 #include "FdSet.hpp"
 
-class Config;
+class Server;
 
 class Webserv
 {
@@ -31,7 +31,7 @@ class Webserv
     public :
         Webserv();
         ~Webserv();
-		void initServer(Config conf);
+		void initServer(Server serv);
         void startServer();
         void change_events(std::vector<struct kevent> &change_list, uintptr_t ident, int16_t filter,
 							uint16_t flags, uint32_t fflags, intptr_t data, void *udata);

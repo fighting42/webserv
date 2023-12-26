@@ -1,11 +1,11 @@
 #include "../includes/Webserv.hpp"
-#include "../includes/Config.hpp"
+#include "../includes/Server.hpp"
 
 Webserv::Webserv() {}
 
 Webserv::~Webserv() {}
 
-void    Webserv::initServer(Config conf)
+void    Webserv::initServer(Server serv)
 {
     int server_socket;
     struct sockaddr_in server_addr;
@@ -16,7 +16,7 @@ void    Webserv::initServer(Config conf)
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET; // IPv4
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY); // 32bit
-    server_addr.sin_port = htons(8080); // port
+    server_addr.sin_port = htons(serv.getPort()); // port
     if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1)
         err("bind() error");
 
@@ -40,6 +40,7 @@ void Webserv::change_events(std::vector<struct kevent> &change_list, uintptr_t i
 
 void    Webserv::startServer()
 {
+    (void)server_addr.sin_port; // 지우기
     change_events(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
     while (1)
     {

@@ -17,9 +17,8 @@ class Server
 	private: 
 		std::string name;
 		std::string ip; // 아직
-		std::string port;
-		std::map<std::string, std::string> serv; // 아직
-		std::map< std::string, std::map<std::string, std::string> > loc; // std::map<std::string, Location> ???
+		int	port;
+		std::map< std::string, std::map<std::string, std::string> > loc;
 
 	public:
 		Server();
@@ -27,11 +26,11 @@ class Server
 
 		std::string	getName() const;
 		std::string	getIP() const;
-		std::string	getPort() const;
+		int	getPort() const;
 		std::map< std::string, std::map<std::string, std::string> > getLoc() const;
 
 		void	parseDirective(const std::string& dir, std::vector<std::string>& tokens);
-		bool	parseLocation(std::ifstream& file, std::vector<std::string> tokens, bool);
+		bool	parseLocation(std::vector<std::string> tokens, bool);
 };
 
 #endif

@@ -2,10 +2,11 @@ NAME		=	webserv
 
 CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98
 
-SRCS		=	srcs/main.cpp
-				srcs/Request.cpp
-				srcs/Server.cpp
-				srcs/Libft.cpp
+SRCS		=	srcs/main.cpp \
+				srcs/Config.cpp \
+				srcs/Request.cpp \
+				srcs/Server.cpp \
+				srcs/Webserv.cpp
 
 OBJS		=	$(SRCS:.cpp=.o)
 

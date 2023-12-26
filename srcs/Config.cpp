@@ -5,12 +5,6 @@ Config::Config() {}
 
 Config::~Config() {}
 
-void	err(std::string str)
-{
-	std::cout << str << std::endl;
-	exit(1);
-}
-
 std::vector<Server>	Config::getConfig() const
 {
 	return config;
@@ -50,12 +44,11 @@ void	Config::parseConfig(std::string path)
 				else if (line.find("server_name") != std::string::npos)
 					serv->parseDirective("server_name", tokens);
 				else if (line.find("location") != std::string::npos || flag)
-					flag = serv->parseLocation(file, tokens, flag);
+					flag = serv->parseLocation(tokens, flag);
+				// else ? 나머지도 저장 해야되나??
 
 				if (flag && line.find('}') != std::string::npos)
 					flag = false;
-				
-				// 나머지 map(serv.serv)에 넣기 ?
 
 				if (line.find('{') != std::string::npos)
 					chk++;

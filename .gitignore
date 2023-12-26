@@ -2,6 +2,7 @@ a.out
 a.out.dSYM
 *.o
 ser
+webserv
 
 .DS_Store
 .vscode

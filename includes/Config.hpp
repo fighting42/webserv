@@ -7,7 +7,7 @@
 #include <vector>
 #include <sstream>
 
-class Server;
+#include "Server.hpp"
 
 class Config
 {
