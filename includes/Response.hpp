@@ -1,7 +1,9 @@
 #ifndef RESPONSE_HPP
 #define RESPONSE_HPP
 
-#include "Webserv.hpp"
+#include <iostream>
+#include <string>
+#include <map>
 
 class Response
 {

@@ -2,10 +2,10 @@
 #define CONFIG_HPP
 
 #include <iostream>
-#include <string>
 #include <fstream>
-#include <vector>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "Server.hpp"
 
@@ -23,6 +23,6 @@ class Config
 		void	parseConfig(std::string path);
 };
 
-void	err(std::string);
+void	error(std::string);
 
 #endif

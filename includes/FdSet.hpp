@@ -1,18 +1,18 @@
 #ifndef FDSET_HPP
 #define FDSET_HPP
 
-typedef enum    t_fd_type
+typedef enum	t_type
 {
-	FD_SERVER,
-	FD_CLIENT,
-	FD_RESOURCE
-}   e_fd_type;
+	SERVER,
+	CLIENT,
+	RESOURCE
+}	e_type;
 
 class FdSet
 {
 	protected:
 		int fd;
-		e_fd_type fd_type;
+		e_type type;
 
 	public:
         FdSet();

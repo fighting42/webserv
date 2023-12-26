@@ -19,7 +19,7 @@ void	Config::parseConfig(std::string path)
 {
 	std::ifstream file(path);
 	if (!file)
-		err("file error");
+		error("file error");
 
 	std::string line;
 	while (std::getline(file, line))

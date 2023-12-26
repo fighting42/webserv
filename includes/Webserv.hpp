@@ -1,12 +1,12 @@
 #ifndef WEBSERV_HPP
 #define WEBSERV_HPP
 
-#include <string>
 #include <iostream>
+#include <sstream>
+#include <string>
 #include <map>
 #include <vector>
 #include <fcntl.h>
-#include <sstream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -38,6 +38,6 @@ class Webserv
 
 };
 
-void	err(std::string str);
+void	error(std::string str);
 
 #endif

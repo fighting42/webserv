@@ -1,9 +1,10 @@
 NAME		=	webserv
 
-CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98
+CXXFLAGS	=	-Wall -Wextra -Werror -std=c++98 -g
 
 SRCS		=	srcs/main.cpp \
 				srcs/Config.cpp \
+				srcs/FdSet.cpp \
 				srcs/Request.cpp \
 				srcs/Server.cpp \
 				srcs/Webserv.cpp

@@ -3,9 +3,9 @@
 #include "../includes/Request.hpp"
 #include "../includes/Webserv.hpp"
 
-void	err(std::string str)
+void	error(std::string str)
 {
-	std::cout << str << std::endl;
+	std::cerr << str << std::endl;
 	exit(1);
 }
 
@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     else if (argc == 2)
         path = argv[1];
     else
-        err("argc error");
+        error("argc error");
 
     Config  conf;
     Request req;

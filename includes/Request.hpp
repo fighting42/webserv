@@ -1,7 +1,11 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
-#include "Webserv.hpp"
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <map>
+#include <vector>
 
 class Request
 {
@@ -13,14 +17,12 @@ class Request
 		std::map<std::string, std::string> headers;
 		std::string body;
     
-    public:
-        Request();
-        ~Request();
-        void ReqParsing(std::string msg);
-        std::vector<std::string> ReqSplit(std::string input, char delimiter);
-        std::string removeSpace(std::string str);
-
-
+  public:
+    Request();
+    ~Request();
+    void ReqParsing(std::string msg);
+    std::vector<std::string> ReqSplit(std::string input, char delimiter);
+    std::string removeSpace(std::string str);
 };
 
 #endif

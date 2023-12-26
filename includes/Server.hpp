@@ -1,7 +1,6 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include "FdSet.hpp"
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -9,10 +8,11 @@
 #include <map>
 #include <vector>
 
+#include "FdSet.hpp"
+
 class Location;
 
-// : public FdSet
-class Server
+class Server : public FdSet
 {
 	private: 
 		std::string name;
