@@ -16,7 +16,6 @@ class Server : public FdSet
 {
 	private: 
 		std::string name;
-		std::string ip; // 아직
 		int	port;
 		std::map< std::string, std::map<std::string, std::string> > loc;
 
@@ -25,7 +24,6 @@ class Server : public FdSet
 		virtual ~Server();
 
 		std::string	getName() const;
-		std::string	getIP() const;
 		int	getPort() const;
 		std::map< std::string, std::map<std::string, std::string> > getLoc() const;
 

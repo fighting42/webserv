@@ -19,14 +19,14 @@ int main(int argc, char **argv)
     else
         error("argc error");
 
-    Config  conf;
-    Request req;
+    Config  config;
+    Request request;
     Webserv webserv;
 
-    conf.parseConfig(path);
-    req.ReqParsing("GET ./resources/index.html http/1.1\ncontent_length: 9\ncontent_type: text/html");
-    Server serv = conf.getConfig()[0]; // 첫번째 서버 블록
-    webserv.initServer(serv); 
+    config.parseConfig(path);
+    request.ReqParsing("GET ./resources/index.html http/1.1\ncontent_length: 9\ncontent_type: text/html");
+    webserv.initServer(config);
+    webserv.startServer();
 
-    return (0);
+    return 0;
 }

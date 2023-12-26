@@ -1,37 +1,38 @@
 #include "../includes/Webserv.hpp"
-#include "../includes/Server.hpp"
+#include "../includes/Config.hpp"
 
 Webserv::Webserv() {}
 
 Webserv::~Webserv() {}
 
-void    Webserv::initServer(Server serv)
+void    Webserv::initServer(Config conf)
 {
-    // 지우기
-    (void)server_addr.sin_port;
-    (void)server_socket;
-
-    int server_socket;
-    struct sockaddr_in server_addr;
-
-    if ((server_socket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
-        error("socket() error");
-
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(serv.getPort());
-    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1)
-        error("bind() error");
-
-    if (listen(server_socket, 3) == -1)
-        error("listen() error");
-    fcntl(server_socket, F_SETFL, O_NONBLOCK);
-
-    int kq;
     if ((kq = kqueue()) == -1)
         error("kqueue() error");
-    change_events(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+
+    std::vector<Server> servs = conf.getConfig();
+    for (std::vector<Server>::iterator it = servs.begin(); it != servs.end(); ++it)
+    {
+        int server_socket;
+        struct sockaddr_in server_addr;
+
+        if ((server_socket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
+            error("socket() error");
+
+        memset(&server_addr, 0, sizeof(server_addr));
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        server_addr.sin_port = htons(it->getPort());
+
+        if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1)
+            error("bind() error");
+        if (listen(server_socket, 3) == -1)
+            error("listen() error");
+        fcntl(server_socket, F_SETFL, O_NONBLOCK);
+
+        change_events(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+        std::cout << "[server create] " << it->getName() << ":" << it->getPort() << std::endl;
+    }
 }
 
 void Webserv::change_events(std::vector<struct kevent> &change_list, uintptr_t ident, int16_t filter,
@@ -45,6 +46,9 @@ void Webserv::change_events(std::vector<struct kevent> &change_list, uintptr_t i
 
 void    Webserv::startServer()
 {
+    int new_events;
+	struct kevent* curr_event;
+
     while (1)
     {
         new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
@@ -54,7 +58,12 @@ void    Webserv::startServer()
 
         for (int i = 0; i < new_events; ++i)
         {
-            if (curr_event->flags & EV_ERROR) {}
+            curr_event = &event_list[i];
+
+            if (curr_event->flags & EV_ERROR)
+            {
+
+            }
             else if (curr_event->filter == EVFILT_READ)
             {
 				

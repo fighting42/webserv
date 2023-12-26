@@ -33,6 +33,9 @@ void	Config::parseConfig(std::string path)
 				chk++;
 			while (std::getline(file, line))
 			{
+				if (line.find(';') == std::string::npos && !line.empty() && \
+					line.find('{') == std::string::npos && line.find('}') == std::string::npos)
+					error("config file error");
 				std::istringstream iss(line);
 				std::vector<std::string> tokens;
 				std::string token;

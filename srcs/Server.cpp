@@ -2,13 +2,11 @@
 #include "../includes/Config.hpp"
 
 Server::Server() 
-	: name(""), ip(""), port(0) {}
+	: name(""), port(0) {}
 
 Server::~Server() {}
 
 std::string	Server::getName() const { return name; }
-
-std::string	Server::getIP() const { return ip; } 
 
 int	Server::getPort() const { return port; }
 
