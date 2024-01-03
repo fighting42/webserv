@@ -55,6 +55,8 @@ void Request::ReqParsing(std::string msg)
 
     firstline = ReqSplit(first, ' ');
     this->method = firstline[0];
+    if (this->method != "GET" || this->method != "POST" || this->method != "DELETE")
+        return ;
     this->location = firstline[1];
     this->version = firstline[2];
 
