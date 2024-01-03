@@ -9,13 +9,13 @@ class Response
 {
 	private:
 		std::string version;
-        int         status;
-        std::string status_msg;
+		// int		 status; // make를 위한 주석입니당 지워도됩니당
+		std::string status_msg;
 		std::map<std::string, std::string> headers;
 		std::string body;
 
-    public:
-        
+	public:
+		
 };
 
 #endif

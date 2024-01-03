@@ -23,6 +23,4 @@ class Config
 		void	parseConfig(std::string path);
 };
 
-void	error(std::string);
-
 #endif

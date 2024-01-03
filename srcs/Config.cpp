@@ -5,10 +5,7 @@ Config::Config() {}
 
 Config::~Config() {}
 
-std::vector<Server>	Config::getConfig() const
-{
-	return config;
-}
+std::vector<Server>	Config::getConfig() const { return config; }
 
 void	Config::addConfig(Server& serv)
 {
@@ -19,7 +16,7 @@ void	Config::parseConfig(std::string path)
 {
 	std::ifstream file(path);
 	if (!file)
-		error("file error");
+		throw "config file error";
 
 	std::string line;
 	while (std::getline(file, line))
@@ -35,7 +32,7 @@ void	Config::parseConfig(std::string path)
 			{
 				if (line.find(';') == std::string::npos && !line.empty() && \
 					line.find('{') == std::string::npos && line.find('}') == std::string::npos)
-					error("config file error");
+					throw "config file error";
 				std::istringstream iss(line);
 				std::vector<std::string> tokens;
 				std::string token;
@@ -64,26 +61,3 @@ void	Config::parseConfig(std::string path)
 		}
 	}
 }
-
-// int main(int argc, char **argv)
-// {
-// 	Config c;
-// 	if (argc == 2)
-// 		c.parseConfig(argv[1]);
-// 	std::vector<Server> s = c.getConfig();
-// 	for (std::vector<Server>::iterator s_it = s.begin(); s_it != s.end(); ++s_it)
-// 	{
-// 		std::cout << "name: " << s_it->getName() << std::endl
-// 			<< "port: " << s_it->getPort() << std::endl;
-
-// 		std::map<std::string, std::map<std::string, std::string> > l = s_it->getLoc();
-// 		for (std::map<std::string, std::map<std::string, std::string> >::iterator l_it = l.begin(); l_it != l.end(); ++l_it)
-// 		{
-// 			std::cout << "location: " << l_it->first << std::endl;
-// 			std::map<std::string, std::string> m = l_it->second;
-// 			for (std::map<std::string, std::string>::iterator it = m.begin(); it != m.end(); ++it)
-// 				std::cout << it->second << " " << it->first << std::endl;
-// 		}
-// 		std::cout << std::endl;
-// 	}
-// }
