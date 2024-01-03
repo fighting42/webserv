@@ -8,11 +8,9 @@
 #include <map>
 #include <vector>
 
-#include "FdSet.hpp"
-
 class Location;
 
-class Server : public FdSet
+class Server
 {
 	private: 
 		std::string name;

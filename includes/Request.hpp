@@ -23,6 +23,7 @@ class Request
     void ReqParsing(std::string msg);
     std::vector<std::string> ReqSplit(std::string input, char delimiter);
     std::string removeSpace(std::string str);
+    void Request::PrintRequest();
 };
 
 #endif
