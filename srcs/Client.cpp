@@ -7,6 +7,12 @@ Client::Client(int client_socket) : fd(client_socket) {}
 
 Client::~Client() {}
 
+int Client::getFd() { return fd; }
+
+Status  Client::getStatus() { return status; }
+
+void    Client::setStatus(Status status) { this->status = status; }
+
 void Client::HandleSocketRead()
 {
     Request Req;

@@ -47,6 +47,52 @@ void Webserv::change_events(std::vector<struct kevent> &change_list, uintptr_t i
 	change_list.push_back(temp_event);
 }
 
+void Webserv::disconnect_client(int client_fd)
+{
+    close(client_fd);
+    for (std::vector<Client *>::iterator it; it != v_client.end(); ++it)
+    {
+        if ((*it)->getFd() == client_fd)
+        {
+            v_client.erase(it);
+            delete *it;
+            break;
+        }
+    }
+    // std::cout << "disconnect client" << std::endl;
+}
+
+void Webserv::connect_client(int client_fd)
+{
+    int client_socket;
+    if ((client_socket = accept(client_fd, NULL, NULL)) == -1)
+        error("accept() error");
+    fcntl(client_socket, F_SETFL, O_NONBLOCK);
+
+    change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+    change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+    
+    Client *client = new Client(client_socket);
+    v_client.push_back(client);
+    // std::cout << "connect new client" << std::endl;
+}
+
+bool Webserv::isServer(int fd)
+{
+    if (std::find(v_server.begin(), v_server.end(), fd) != v_server.end())
+        return true;
+    else
+        return false;
+}
+
+bool Webserv::isClient(int fd)
+{
+    if (std::find(v_client.begin(), v_client.end(), fd) != v_client.end())
+        return true;
+    else
+        return false;
+}
+
 void    Webserv::startServer()
 {
     int new_events;
@@ -63,27 +109,29 @@ void    Webserv::startServer()
         {
             curr_event = &event_list[i];
 
-            if (std::find(v_server.begin(), v_server.end(), curr_event->ident) != v_server.end())
-            { // server
-                int client_socket;
-                if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
-                    error("accept() error");
-                fcntl(client_socket, F_SETFL, O_NONBLOCK);
-
-                change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-                
-                Client *client = new Client(client_socket);
-                v_client.push_back(client);
+            if (curr_event->flags & EV_ERROR)
+            {
+                if (isServer(curr_event->ident))
+                    error("server socket error");
+                else
+                    disconnect_client(curr_event->ident);
             }
-            else
-            { // client
-
+            else if (curr_event->filter == EVFILT_READ)
+            {
+                if (isServer(curr_event->ident))
+                    connect_client(curr_event->ident);
+                else if (isClient(curr_event->ident))
+                {
+                    // client status 보고 read 작업. (HandleSocketRead 등)
+                }
             }
-
-            if (curr_event->flags & EV_ERROR) {}
-            else if (curr_event->filter == EVFILT_READ) {}
-            else if (curr_event->filter == EVFILT_WRITE) {}
+            else if (curr_event->filter == EVFILT_WRITE)
+            {
+                if (isClient(curr_event->ident))
+                {
+                    // HandleSocketWrite 등
+                }
+            }
         }
     }
 }
