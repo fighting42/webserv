@@ -14,6 +14,7 @@
 #include <sys/event.h>
 
 class Config;
+class Client;
 
 class Webserv
 {
@@ -21,6 +22,9 @@ class Webserv
     int kq;
     std::vector<struct kevent> change_list;
     struct kevent event_list[8];
+
+    std::vector<int> v_server;
+    std::vector<Client *> v_client;
 
   public:
     Webserv();

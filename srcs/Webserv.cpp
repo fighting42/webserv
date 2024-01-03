@@ -1,5 +1,6 @@
 #include "../includes/Webserv.hpp"
 #include "../includes/Config.hpp"
+#include "../includes/Client.hpp"
 
 Webserv::Webserv() {}
 
@@ -31,7 +32,9 @@ void    Webserv::initServer(Config conf)
         fcntl(server_socket, F_SETFL, O_NONBLOCK);
 
         change_events(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-        std::cout << "[server create] " << it->getName() << ":" << it->getPort() << std::endl;
+        v_server.push_back(server_socket);
+
+        std::cout << "[server start] " << it->getName() << ":" << it->getPort() << std::endl;
     }
 }
 
@@ -60,18 +63,27 @@ void    Webserv::startServer()
         {
             curr_event = &event_list[i];
 
-            if (curr_event->flags & EV_ERROR)
-            {
+            if (std::find(v_server.begin(), v_server.end(), curr_event->ident) != v_server.end())
+            { // server
+                int client_socket;
+                if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
+                    error("accept() error");
+                fcntl(client_socket, F_SETFL, O_NONBLOCK);
+
+                change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+                
+                Client *client = new Client(client_socket);
+                v_client.push_back(client);
+            }
+            else
+            { // client
 
             }
-            else if (curr_event->filter == EVFILT_READ)
-            {
-				
-            }
-            else if (curr_event->filter == EVFILT_WRITE)
-            {
-				
-            }
+
+            if (curr_event->flags & EV_ERROR) {}
+            else if (curr_event->filter == EVFILT_READ) {}
+            else if (curr_event->filter == EVFILT_WRITE) {}
         }
     }
 }
