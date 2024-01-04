@@ -8,33 +8,34 @@
 #include "Response.hpp"
 #include "Server.hpp"
 
-enum Status
+enum Status // 언제 값 바꿔주는지
 {
-	RECV_REQUEST,
-	SEND_RESPONSE,
-	READ_FILE,
-	WRITE_FILE
-    // 더 추가해야됨
+	RECV_REQUEST, // client 객체 생성시
+	READ_FILE, // handleGet() 함수 마지막
+	SEND_RESPONSE, // handleFileRead() 함수 마지막
+	DISCONNECT // handleSocketWrite() 함수 마지막 또는 error?
 }; 
 
 class Client
 {
     private:
-        int fd;
+        int socket_fd;
+        int file_fd;
         Status status;
         Request req;
         Response res;
         
         // config 파일 내용. 요청메세지 보고 해당하는 server, location 블록 담기
-        Server serv; // host -> server
-        std::map<std::string, std::string> loc; // uri -> location
+        Server server; // host -> server
+        std::map<std::string, std::string> m_location; // uri -> location
+
+        Client();
 
     public:
-        Client();
         Client(int client_socket);
         ~Client();
 
-        int     getFd();
+        int     getSocketFd();
         Status  getStatus();
         void    setStatus(Status status);
 

@@ -38,6 +38,7 @@ class Kqueue
 
     bool isServer(int fd);
     bool isClient(int fd);
+    Client* getClient(int fd);
 };
 
 #endif

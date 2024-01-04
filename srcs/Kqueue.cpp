@@ -52,7 +52,7 @@ void Kqueue::disconnect_client(int client_fd)
 	close(client_fd);
 	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
 	{
-		if ((*it)->getFd() == client_fd)
+		if ((*it)->getSocketFd() == client_fd)
 		{
 			v_client.erase(it);
 			delete *it;
@@ -89,10 +89,21 @@ bool Kqueue::isClient(int fd)
 {
 	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
 	{
-		if ((*it)->getFd() == fd)
+		if ((*it)->getSocketFd() == fd)
 			return true;
 	}
 	return false;
+}
+
+Client* Kqueue::getClient(int fd)
+{
+	std::vector<Client *>::iterator it;
+	for (it = v_client.begin(); it != v_client.end(); ++it)
+	{
+		if ((*it)->getSocketFd() == fd)
+			break;
+	}
+	return *it;
 }
 
 void	Kqueue::startServer()
@@ -123,9 +134,30 @@ void	Kqueue::startServer()
 					connect_client(curr_event->ident);
 				else if (isClient(curr_event->ident))
 				{
-					// client status 보고 read 작업. (HandleSocketRead 등)
-					
-					// request test
+					Client *client = getClient(curr_event->ident);
+					switch (client->getStatus())
+					{
+					case RECV_REQUEST:
+						// - handleSocketRead()
+						// 1. socket_fd read()
+						// 2. request 객체 사용, 요청 메세지(read한 내용) 파싱
+						// method 보고 handleGet(), handleDelete(), handleCgi() 호출
+						// - handleGet()
+						// 1. m_location의 파일, 경로 등 유효성체크 
+						// 2. index file open(), fd(리턴값)는 file_fd에 저장
+						// 3. setStatus(READ_FILE)
+						break;
+					case READ_FILE: 
+						// - handleFileRead()
+						// 1. file_fd read()
+						// 2. setStatus(SEND_RESPONSE)
+						break;
+					case DISCONNECT:
+						disconnect_client(client->getSocketFd());
+						break;
+					}
+
+					// --- request test ---
 					// read()로 http 요청 읽기 (curl로 보낸 요청메세지 buf에 담아 출력)
 					char buf[1024];
 					int n = read(curr_event->ident, buf, sizeof(buf));
@@ -134,20 +166,34 @@ void	Kqueue::startServer()
 						std::cout << "[request message]" << std::endl << buf << std::endl;
 					else
 						disconnect_client(curr_event->ident);
+					// --- request test end ---
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
 			{
 				if (isClient(curr_event->ident))
 				{
-					// HandleSocketWrite 등
+					Client *client = getClient(curr_event->ident);
+					switch (client->getStatus())
+					{
+					case SEND_RESPONSE:
+						// - handleSocketWrite()
+						// 1. response 객체 사용, 응답 메세지 생성
+						// 2. socket_fd write()
+						// 3. setStatus(DISCONNECT)
+						break;
+					case DISCONNECT:
+						disconnect_client(client->getSocketFd());
+						break;
+					}
 
-					// response test
-					// 응답 생성 후 write()로 보내기 (응답메세제 buf에 담아 전송. 현재 buf 값은 예시! 요청에 따라서 달라져야함)
+					// --- response test ---
+					// 응답 생성 후 write()로 보내기 (응답메세지 buf에 담아 전송. 현재 buf 값은 예시! 요청에 따라서 달라져야함)
 					char buf[1024] = "HTTP/1.1 200 OK\nContent-type:text/plain\nContent-Length:6\n\ntest!\n\n";
 					write(curr_event->ident, buf, sizeof(buf));
 					std::cout << "[response message]" << std::endl << buf << std::endl;
 					disconnect_client(curr_event->ident); 
+					// --- response test end ---
 				}
 			}
 		}
