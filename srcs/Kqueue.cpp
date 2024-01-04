@@ -62,10 +62,10 @@ void Kqueue::disconnect_client(int client_fd)
 	std::cout << "[disconnect client] " << client_fd << std::endl;
 }
 
-void Kqueue::connect_client(int client_fd)
+void Kqueue::connect_client(int server_fd)
 {
 	int client_socket;
-	if ((client_socket = accept(client_fd, NULL, NULL)) == -1)
+	if ((client_socket = accept(server_fd, NULL, NULL)) == -1)
 		throw "accept() error";
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
