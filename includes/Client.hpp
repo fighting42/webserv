@@ -24,7 +24,7 @@ class Client
         Status status;
         Request request;
         Response response;
-
+        ssize_t written; //reponse의 적힌 사이즈변수
         Server server;
         std::map<std::string, std::string> m_location;
 

@@ -38,5 +38,15 @@ void Client::HandleSocketRead()
 
 void Client::HandleSocketWrite()
 {
-
+	//response = Response();
+	const std::vector<char>& send_buffer = response.getSendBuffer();
+	ssize_t write_size = send_buffer.size() - written > 1024 ? 1024 : send_buffer.size() - written;
+	write_size = write(socket_fd, &send_buffer[written], write_size);
+	if (write_size == -1) {
+		status = DISCONNECT;
+		return;
+	}
+	written += write_size;
+	if (written == static_cast<ssize_t>(send_buffer.size()))
+		status = DISCONNECT;	
 }
