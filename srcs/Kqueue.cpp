@@ -32,6 +32,7 @@ void	Kqueue::initServer(Config config)
 		fcntl(server_socket, F_SETFL, O_NONBLOCK);
 
 		change_events(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		(*it).setSocketFd(server_socket);
 		v_server.push_back(server_socket);
 
 		std::cout << "[server start] " << it->getName() << ":" << it->getPort() << std::endl;
@@ -73,6 +74,14 @@ void Kqueue::connect_client(int server_fd)
 	change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	
 	Client *client = new Client(client_socket);
+	for (std::vector<Server>::iterator it = v_config.begin(); it != v_config.end(); ++it)
+	{
+		if (it->getSocketFd() == server_fd)
+		{
+			client->setServer(*it);
+			break;
+		}
+	}
 	v_client.push_back(client);
 	std::cout << "[connect new client] " << client_socket << std::endl;
 }
@@ -138,19 +147,19 @@ void	Kqueue::startServer()
 					switch (client->getStatus())
 					{
 					case RECV_REQUEST:
-						// - handleSocketRead()
-						// 1. socket_fd read()
-						// 2. request 객체 사용, 요청 메세지(read한 내용) 파싱
-						// - setConfig() -> server, m_location 저장 함수 (예진 만드는중)
-						// - handleGet()
-						// 1. m_location의 파일, 경로 등 유효성체크 
-						// 2. index file open(), fd(리턴값)는 file_fd에 저장
-						// 3. setStatus(READ_FILE)
+						// client->handleSocketRead();
+						// 	1. socket_fd read()
+						// 	2. request 객체 사용, 요청 메세지(read한 내용) 파싱
+						// client->findLocation(); // m_location 저장 함수, 만들어놨어욤~
+						// client->handleGet();
+						// 	1. m_location의 파일, 경로 등 유효성체크 
+						// 	2. index file open(), fd(리턴값)는 file_fd에 저장
+						// 	3. setStatus(READ_FILE)
 						break;
 					case READ_FILE: 
-						// - handleFileRead()
-						// 1. file_fd read()
-						// 2. setStatus(SEND_RESPONSE)
+						// client->handleFileRead();
+						// 	1. file_fd read()
+						// 	2. setStatus(SEND_RESPONSE)
 						break;
 					case DISCONNECT:
 						disconnect_client(client->getSocketFd());
@@ -177,10 +186,10 @@ void	Kqueue::startServer()
 					switch (client->getStatus())
 					{
 					case SEND_RESPONSE:
-						// - handleSocketWrite()
-						// 1. response 객체 사용, 응답 메세지 생성
-						// 2. socket_fd write()
-						// 3. setStatus(DISCONNECT)
+						// client->handleSocketWrite();
+						// 	1. response 객체 사용, 응답 메세지 생성
+						// 	2. socket_fd write()
+						// 	3. setStatus(DISCONNECT)
 						break;
 					case DISCONNECT:
 						disconnect_client(client->getSocketFd());

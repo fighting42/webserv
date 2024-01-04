@@ -12,6 +12,9 @@ int	Server::getPort() const { return port; }
 
 std::map< std::string, std::map<std::string, std::string> > Server::getLoc() const { return loc; }
 
+int Server::getSocketFd() { return socket_fd; }
+
+void Server::setSocketFd(int server_socket) { socket_fd = server_socket; }
 
 bool	Server::parseLocation(std::vector<std::string> tokens, bool flag)
 {

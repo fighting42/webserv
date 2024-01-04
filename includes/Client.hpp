@@ -22,12 +22,11 @@ class Client
         int socket_fd;
         // int file_fd;
         Status status;
-        Request req;
-        Response res;
-        
-        // config 파일 내용. 요청메세지 보고 해당하는 server, location 블록 담기
-        Server server; // host -> server
-        std::map<std::string, std::string> m_location; // uri -> location
+        Request request;
+        Response response;
+
+        Server server;
+        std::map<std::string, std::string> m_location;
 
         Client();
 
@@ -38,7 +37,8 @@ class Client
         int     getSocketFd();
         int     getStatus();
         void    setStatus(Status status);
-        void    setConfig(); // set server, set m_location
+        void    setServer(Server server);
+        void    findLocation();
 
         void HandleSocketRead();
         void HandleSocketWrite();

@@ -12,7 +12,8 @@ class Location;
 
 class Server
 {
-	private: 
+	private:
+		int socket_fd;
 		std::string name;
 		int	port;
 		std::map< std::string, std::map<std::string, std::string> > loc;
@@ -24,6 +25,8 @@ class Server
 		std::string	getName() const;
 		int	getPort() const;
 		std::map< std::string, std::map<std::string, std::string> > getLoc() const;
+		int getSocketFd();
+		void setSocketFd(int server_socket);
 
 		void	parseDirective(const std::string& dir, std::vector<std::string>& tokens);
 		bool	parseLocation(std::vector<std::string> tokens, bool);
