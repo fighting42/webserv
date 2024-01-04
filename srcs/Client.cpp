@@ -39,14 +39,15 @@ void Client::HandleSocketRead()
 void Client::HandleSocketWrite()
 {
 	//response = Response();
+	written = 0;
 	const std::vector<char>& send_buffer = response.getSendBuffer();
 	ssize_t write_size = send_buffer.size() - written > 1024 ? 1024 : send_buffer.size() - written;
 	write_size = write(socket_fd, &send_buffer[written], write_size);
-	if (write_size == -1) {
+	if (write_size == -1) { //write 오류
 		status = DISCONNECT;
 		return;
 	}
 	written += write_size;
-	if (written == static_cast<ssize_t>(send_buffer.size()))
+	if (written == static_cast<ssize_t>(send_buffer.size())) //다쓰면 연결해제
 		status = DISCONNECT;	
 }
