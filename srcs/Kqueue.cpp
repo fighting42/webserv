@@ -6,13 +6,13 @@ Kqueue::Kqueue() {}
 
 Kqueue::~Kqueue() {}
 
-void	Kqueue::initServer(Config conf)
+void	Kqueue::initServer(Config config)
 {
 	if ((kq = kqueue()) == -1)
 		throw "kqueue() error";
 
-	std::vector<Server> servs = conf.getConfig();
-	for (std::vector<Server>::iterator it = servs.begin(); it != servs.end(); ++it)
+	std::vector<Server> v_server_config = config.getConfig();
+	for (std::vector<Server>::iterator it = v_server_config.begin(); it != v_server_config.end(); ++it)
 	{
 		int server_socket;
 		struct sockaddr_in server_addr;
@@ -50,7 +50,7 @@ void Kqueue::change_events(std::vector<struct kevent> &change_list, uintptr_t id
 void Kqueue::disconnect_client(int client_fd)
 {
 	close(client_fd);
-	for (std::vector<Client *>::iterator it; it != v_client.end(); ++it)
+	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
 	{
 		if ((*it)->getFd() == client_fd)
 		{
@@ -59,7 +59,7 @@ void Kqueue::disconnect_client(int client_fd)
 			break;
 		}
 	}
-	std::cout << "[disconnect client]" << std::endl;
+	std::cout << "[disconnect client] " << client_fd << std::endl;
 }
 
 void Kqueue::connect_client(int client_fd)
@@ -74,7 +74,7 @@ void Kqueue::connect_client(int client_fd)
 	
 	Client *client = new Client(client_socket);
 	v_client.push_back(client);
-	std::cout << "[connect new client]" << std::endl;
+	std::cout << "[connect new client] " << client_socket << std::endl;
 }
 
 bool Kqueue::isServer(int fd)
@@ -124,6 +124,16 @@ void	Kqueue::startServer()
 				else if (isClient(curr_event->ident))
 				{
 					// client status 보고 read 작업. (HandleSocketRead 등)
+					
+					// request test
+					// read()로 http 요청 읽기 (curl로 보낸 요청메세지 buf에 담아 출력)
+					char buf[1024];
+					int n = read(curr_event->ident, buf, sizeof(buf));
+					buf[n] = '\0';
+					if (n > 0)
+						std::cout << "[request message]" << std::endl << buf << std::endl;
+					else
+						disconnect_client(curr_event->ident);
 				}
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
@@ -131,6 +141,13 @@ void	Kqueue::startServer()
 				if (isClient(curr_event->ident))
 				{
 					// HandleSocketWrite 등
+
+					// response test
+					// 응답 생성 후 write()로 보내기 (응답메세제 buf에 담아 전송. 현재 buf 값은 예시! 요청에 따라서 달라져야함)
+					char buf[1024] = "HTTP/1.1 200 OK\nContent-type:text/plain\nContent-Length:6\n\ntest!\n\n";
+					write(curr_event->ident, buf, sizeof(buf));
+					std::cout << "[response message]" << std::endl << buf << std::endl;
+					disconnect_client(curr_event->ident); 
 				}
 			}
 		}

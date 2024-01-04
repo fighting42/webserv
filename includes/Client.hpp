@@ -25,9 +25,9 @@ class Client
         Request req;
         Response res;
         
-        // config 파일 내용. 요청메세지 참고해서 일치하는 정보 담기
-        Server serv; // host -> server block
-        std::map<std::string, std::string> loc; // 첫줄에 경로? -> location block
+        // config 파일 내용. 요청메세지 보고 해당하는 server, location 블록 담기
+        Server serv; // 헤더 host -> server
+        std::map<std::string, std::string> loc; // 시작줄 uri -> location
 
     public:
         Client();

@@ -1,7 +1,3 @@
-#include "../includes/Config.hpp"
-#include "../includes/Server.hpp"
-#include "../includes/Request.hpp"
-#include "../includes/Kqueue.hpp"
 #include "../includes/Webserv.hpp"
 
 int main(int argc, char **argv)

@@ -15,7 +15,4 @@ void Webserv::start(int argc, char **argv)
 
 	kqueue.initServer(config);
 	kqueue.startServer();
-
-	// Request request;
-	// request.ReqParsing("GET ./resources/index.html http/1.1\ncontent_length: 9\ncontent_type: text/html");
 }
