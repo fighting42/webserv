@@ -20,7 +20,7 @@ class Client
 {
     private:
         int socket_fd;
-        int file_fd;
+        // int file_fd;
         Status status;
         Request req;
         Response res;
@@ -36,8 +36,9 @@ class Client
         ~Client();
 
         int     getSocketFd();
-        Status  getStatus();
+        int     getStatus();
         void    setStatus(Status status);
+        void    setConfig(); // set server, set m_location
 
         void HandleSocketRead();
         void HandleSocketWrite();

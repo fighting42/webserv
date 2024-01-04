@@ -10,9 +10,14 @@ Client::~Client() {}
 
 int Client::getSocketFd() { return socket_fd; }
 
-Status  Client::getStatus() { return status; }
+int Client::getStatus() { return status; }
 
 void	Client::setStatus(Status status) { this->status = status; }
+
+void	Client::setConfig()
+{
+
+}
 
 void Client::HandleSocketRead()
 {
