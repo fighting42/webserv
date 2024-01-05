@@ -10,40 +10,30 @@ std::string	Server::getName() const { return name; }
 
 int	Server::getPort() const { return port; }
 
-std::map< std::string, std::map<std::string, std::string> > Server::getLoc() const { return loc; }
+std::map<std::string, std::string>	Server::getServer() const { return m_server; }
 
-int Server::getSocketFd() { return socket_fd; }
+std::map< std::string, std::map<std::string, std::string> > Server::getLocation() const { return m_location; }
 
-void Server::setSocketFd(int server_socket) { socket_fd = server_socket; }
+int Server::getSocketFd() const { return socket_fd; }
 
-bool	Server::parseLocation(std::vector<std::string> tokens, bool flag)
+void	Server::setName(std::string name)
 {
-	static std::string loc_path;
-	if (!flag)
-	{
-		loc_path = tokens[1];
-		std::map<std::string, std::string> map;
-		loc.insert(std::pair< std::string, std::map<std::string, std::string> >(loc_path, map));
-	}
+	if (name.find(';') != std::string::npos)
+		this->name = name.substr(0, name.size() - 1);
 	else
-	{
-		for (size_t i = 1; i < tokens.size(); i++)
-		{
-			if (i == tokens.size() - 1)
-				tokens[i] = tokens[i].substr(0, tokens[i].size() - 1);
-			loc[loc_path].insert(std::pair<std::string, std::string>(tokens[i], tokens[0]));			
-		}
-	}
-	return true;
+		this->name = name;
 }
 
-void	Server::parseDirective(const std::string& dir, std::vector<std::string>& tokens)
-{
-	if (dir == "listen")
-	{
-		std::istringstream iss(tokens[1].substr(0, tokens[1].size() - 1));
-		iss >> port; 
-	}
-	else if (dir == "server_name")
-		name = tokens[1].substr(0, tokens[1].size() - 1);
+void	Server::setPort(std::string port)
+{ 
+	if (port.find(';') != std::string::npos)
+		port = port.substr(0, port.size() - 1);
+	std::stringstream ss(port);
+	ss >> this->port;
 }
+
+void	Server::setServer(std::map<std::string, std::string> m_server) { this->m_server = m_server; }
+
+void	Server::setLocation(std::map< std::string, std::map<std::string, std::string> > m_location) { this->m_location = m_location; }
+
+void	Server::setSocketFd(int server_socket) { socket_fd = server_socket; }

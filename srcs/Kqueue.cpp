@@ -6,12 +6,12 @@ Kqueue::Kqueue() {}
 
 Kqueue::~Kqueue() {}
 
-void	Kqueue::initServer(Config config)
+void	Kqueue::initServer(Config &config)
 {
 	if ((kq = kqueue()) == -1)
 		throw "kqueue() error";
 
-	v_config = config.getConfig();
+	v_config = config.getServer();
 	for (std::vector<Server>::iterator it = v_config.begin(); it != v_config.end(); ++it)
 	{
 		int server_socket;

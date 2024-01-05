@@ -13,23 +13,27 @@ class Location;
 class Server
 {
 	private:
-		int socket_fd;
 		std::string name;
 		int	port;
-		std::map< std::string, std::map<std::string, std::string> > loc;
+		std::map<std::string, std::string> m_server;
+		std::map< std::string, std::map<std::string, std::string> > m_location;
+
+		int socket_fd;
 
 	public:
 		Server();
-		virtual ~Server();
+		~Server();
 
 		std::string	getName() const;
 		int	getPort() const;
-		std::map< std::string, std::map<std::string, std::string> > getLoc() const;
-		int getSocketFd();
-		void setSocketFd(int server_socket);
-
-		void	parseDirective(const std::string& dir, std::vector<std::string>& tokens);
-		bool	parseLocation(std::vector<std::string> tokens, bool);
+		std::map<std::string, std::string>	getServer() const;
+		std::map< std::string, std::map<std::string, std::string> >	getLocation() const;
+		int	getSocketFd() const;
+		void	setName(std::string name);
+		void	setPort(std::string port);
+		void	setServer(std::map<std::string, std::string> m_server);
+		void	setLocation(std::map< std::string, std::map<std::string, std::string> > m_location);
+		void	setSocketFd(int server_socket);
 };
 
 #endif

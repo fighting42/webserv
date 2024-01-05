@@ -32,7 +32,7 @@ class Kqueue
   public:
     Kqueue();
     ~Kqueue();
-    void initServer(Config config);
+    void initServer(Config& config);
     void startServer();
     void change_events(std::vector<struct kevent> &change_list, uintptr_t ident, int16_t filter, 
                         uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
