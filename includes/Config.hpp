@@ -12,7 +12,7 @@
 class Config
 {
 	private:
-		std::vector<Server> v_server;
+		std::vector<Server *> v_server;
 		
 		std::ifstream file;
 		std::string line;
@@ -22,14 +22,16 @@ class Config
 		Config();
 		~Config();
 
-		std::vector<Server>	getServer() const;
+		std::vector<Server *>	getServer() const;
 
 		void	parseConfig(std::string path);
-		void	parseServer();
 		void	parseToken();
-
-		void	checkBracket(int& chk);
+		void	parseServer();
+		void	insertToken(std::map<std::string, std::string>& map, size_t& i);
+		void	checkToken(std::string str, std::string token);
 		void	removeCommentSpace();
+		void	checkConfig();
+
 };
 
 #endif

@@ -27,7 +27,7 @@ class Kqueue
     std::vector<int> v_server;
     std::vector<Client *> v_client;
 
-    std::vector<Server> v_config;
+    std::vector<Server *> v_config;
 
   public:
     Kqueue();

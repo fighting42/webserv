@@ -15,11 +15,11 @@ int Client::getStatus() { return status; }
 
 void	Client::setStatus(Status status) { this->status = status; }
 
-void	Client::setServer(Server server) { this->server = server; }
+void	Client::setServer(Server* server) { this->server = server; }
 
 void    Client::findLocation()
 {
-	m_location = server.getLocation()[request.getUri()];
+	m_location = server->getLocation()[request.getUri()];
 
 	// std::cout << "---------- " << std::endl;
 	// for (std::map<std::string, std::string>::iterator it = m_location.begin(); it != m_location.end(); ++it)

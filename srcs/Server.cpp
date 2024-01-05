@@ -1,8 +1,7 @@
 #include "../includes/Server.hpp"
 #include "../includes/Config.hpp"
 
-Server::Server() 
-	: name(""), port(0) {}
+Server::Server() : name(""), port(0) {}
 
 Server::~Server() {}
 

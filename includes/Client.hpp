@@ -25,7 +25,7 @@ class Client
         Request request;
         Response response;
         ssize_t written; //reponse의 적힌 사이즈변수
-        Server server;
+        Server *server;
         std::map<std::string, std::string> m_location;
 
         Client();
@@ -37,7 +37,7 @@ class Client
         int     getSocketFd();
         int     getStatus();
         void    setStatus(Status status);
-        void    setServer(Server server);
+        void    setServer(Server* server);
         void    findLocation();
         void    handleGet();
 

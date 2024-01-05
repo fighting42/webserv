@@ -12,7 +12,7 @@ void	Kqueue::initServer(Config &config)
 		throw "kqueue() error";
 
 	v_config = config.getServer();
-	for (std::vector<Server>::iterator it = v_config.begin(); it != v_config.end(); ++it)
+	for (std::vector<Server *>::iterator it = v_config.begin(); it != v_config.end(); ++it)
 	{
 		int server_socket;
 		struct sockaddr_in server_addr;
@@ -23,7 +23,7 @@ void	Kqueue::initServer(Config &config)
 		memset(&server_addr, 0, sizeof(server_addr));
 		server_addr.sin_family = AF_INET;
 		server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-		server_addr.sin_port = htons(it->getPort());
+		server_addr.sin_port = htons((*it)->getPort());
 
 		if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1)
 			throw "bind() error";
@@ -32,10 +32,10 @@ void	Kqueue::initServer(Config &config)
 		fcntl(server_socket, F_SETFL, O_NONBLOCK);
 
 		change_events(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-		(*it).setSocketFd(server_socket);
+		(*it)->setSocketFd(server_socket);
 		v_server.push_back(server_socket);
 
-		std::cout << "[server start] " << it->getName() << ":" << it->getPort() << std::endl;
+		std::cout << "[server start] " << (*it)->getName() << ":" << (*it)->getPort() << std::endl;
 	}
 }
 
@@ -74,9 +74,9 @@ void Kqueue::connect_client(int server_fd)
 	change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	
 	Client *client = new Client(client_socket);
-	for (std::vector<Server>::iterator it = v_config.begin(); it != v_config.end(); ++it)
+	for (std::vector<Server *>::iterator it = v_config.begin(); it != v_config.end(); ++it)
 	{
-		if (it->getSocketFd() == server_fd)
+		if ((*it)->getSocketFd() == server_fd)
 		{
 			client->setServer(*it);
 			break;
