@@ -143,7 +143,8 @@ void	Kqueue::startServer()
 					connect_client(curr_event->ident);
 				else if (isClient(curr_event->ident))
 				{
-					Client *client = getClient(curr_event->ident);
+					Client *client = getClient(curr_event->ident); (void)client;
+					
 					switch (client->getStatus())
 					{
 					case RECV_REQUEST:
@@ -168,6 +169,7 @@ void	Kqueue::startServer()
 
 					// --- request test ---
 					// read()로 http 요청 읽기 (curl로 보낸 요청메세지 buf에 담아 출력)
+					// 요거 테스트 하고싶으면 위 switch문 잠깐 주석달기!
 					char buf[1024];
 					int n = read(curr_event->ident, buf, sizeof(buf));
 					buf[n] = '\0';

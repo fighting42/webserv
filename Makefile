@@ -7,6 +7,7 @@ SRCS		=	srcs/main.cpp \
 				srcs/Config.cpp \
 				srcs/Kqueue.cpp \
 				srcs/Request.cpp \
+				srcs/Response.cpp \
 				srcs/Server.cpp \
 				srcs/Webserv.cpp
 
