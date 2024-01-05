@@ -34,9 +34,30 @@ void Client::HandleSocketRead()
 	int msg_length = read(this->socket_fd, buf, 1024);
 	(void)msg_length; // make를 위한 void입니당 지워도됩니당
 	Req.ReqParsing(buf);
+	this->request = Req;
 }
 
 void Client::HandleSocketWrite()
 {
+	//response = Response();
+	written = 0;
+	const std::vector<char>& send_buffer = response.getSendBuffer();
+	ssize_t write_size = send_buffer.size() - written > 1024 ? 1024 : send_buffer.size() - written;
+	write_size = write(socket_fd, &send_buffer[written], write_size);
+	if (write_size == -1) { //write 오류
+		status = DISCONNECT;
+		return;
+	}
+	written += write_size;
+	if (written == static_cast<ssize_t>(send_buffer.size())) //다쓰면 연결해제
+		status = DISCONNECT;	
+}
 
+void Client::handleGet()
+{
+	// 	1. m_location의 파일, 경로 등 유효성체크 
+	// 	2. index file open(), fd(리턴값)는 file_fd에 저장
+	// 	3. setStatus(READ_FILE)
+
+	this->status = READ_FILE;
 }

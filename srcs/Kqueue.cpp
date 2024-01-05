@@ -147,11 +147,11 @@ void	Kqueue::startServer()
 					switch (client->getStatus())
 					{
 					case RECV_REQUEST:
-						// client->handleSocketRead();
+						client->HandleSocketRead();
 						// 	1. socket_fd read()
-						// 	2. request 객체 사용, 요청 메세지(read한 내용) 파싱
-						// client->findLocation(); // m_location 저장 함수, 만들어놨어욤~
-						// client->handleGet();
+						// 	2. request 객체 사용, 요청 메세지(read한 내용) 파싱 -> 1,2번 완료
+						client->findLocation(); // m_location 저장 함수, 만들어놨어욤~
+						client->handleGet();
 						// 	1. m_location의 파일, 경로 등 유효성체크 
 						// 	2. index file open(), fd(리턴값)는 file_fd에 저장
 						// 	3. setStatus(READ_FILE)
