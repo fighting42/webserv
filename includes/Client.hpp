@@ -39,6 +39,7 @@ class Client
         void    setStatus(Status status);
         void    setServer(Server server);
         void    findLocation();
+        void    handleGet();
 
         void HandleSocketRead();
         void HandleSocketWrite();
