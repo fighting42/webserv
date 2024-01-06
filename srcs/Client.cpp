@@ -39,8 +39,8 @@ void Client::HandleSocketRead()
 
 void Client::HandleSocketWrite()
 {
-	//response = Response();
-	written = 0;
+	//response = Response(); //한 곳에서 정의(?)필요
+	written = 0; //한 곳에서 정의(?)필요
 	const std::vector<char>& send_buffer = response.getSendBuffer();
 	ssize_t write_size = send_buffer.size() - written > 1024 ? 1024 : send_buffer.size() - written;
 	write_size = write(socket_fd, &send_buffer[written], write_size);

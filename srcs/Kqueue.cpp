@@ -188,7 +188,7 @@ void	Kqueue::startServer()
 					switch (client->getStatus())
 					{
 					case SEND_RESPONSE:
-						// client->handleSocketWrite();
+						client->HandleSocketWrite();
 						// 	1. response 객체 사용, 응답 메세지 생성
 						// 	2. socket_fd write()
 						// 	3. setStatus(DISCONNECT)
