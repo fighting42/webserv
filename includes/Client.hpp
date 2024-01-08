@@ -40,17 +40,19 @@ class Client
 
         int     getSocketFd();
         int     getStatus();
-        void    setStatus(Status status);
         void    setServer(Server* server);
 
         void    findLocation();
         void    checkMethod();
+        
+        void    handleSocketRead();
+        void    handleSocketWrite();
+        void    handleFileRead();
+        
         void    handleGet();
         void    handleDelete();
-
-        void handleSocketRead();
-        void handleSocketWrite();
-        void handleFileRead();
+        void    handleCgi();
+        void    handleError();
 };
 
 #endif

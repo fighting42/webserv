@@ -34,6 +34,8 @@ class Server
 		void	setServer(std::map<std::string, std::string> m_server);
 		void	setLocation(std::map< std::string, std::map<std::string, std::string> > m_location);
 		void	setSocketFd(int server_socket);
+
+		std::vector<std::string> findValue(std::map<std::string, std::string>& location, std::string key);
 };
 
 #endif

@@ -19,14 +19,13 @@ int Client::getSocketFd() { return socket_fd; }
 
 int Client::getStatus() { return status; }
 
-void	Client::setStatus(Status status) { this->status = status; }
-
 void	Client::setServer(Server* server) { this->server = server; }
 
 void    Client::findLocation()
 {
 	m_location = server->getLocation()[request.getUri()];
-	// location 유효성체크
+	if (m_location.size() == 0) // 404
+		handleError();
 }
 
 void    Client::checkMethod()
@@ -34,18 +33,17 @@ void    Client::checkMethod()
 	findLocation();
 	// handleCgi();
 	if (request.getMethod() == "GET")
-		handleGet();
+		handleError();
+		// handleGet();
 	else if (request.getMethod() == "DELETE")
 		handleDelete();
 }
 
 void Client::handleSocketRead()
 {
-	Request Req;
 	char buf[1024];
 	body_length = read(this->socket_fd, buf, 1024);
-	Req.ReqParsing(buf);
-	this->request = Req;
+	request.ReqParsing(buf);
 }
 
 void Client::handleSocketWrite()
@@ -83,4 +81,21 @@ void Client::handleGet()
 void    Client::handleDelete()
 {
 	
+}
+
+void    Client::handleCgi()
+{
+
+}
+
+void    Client::handleError()
+{
+	// handleGet()이랑 비슷. server, config에서 error_page 찾아서 open()
+	// server block의 error_page 우선 적용, 없으면 location, 그것도 없으면 default
+	
+	// std::cout << server->findValue(m_location, "error_page")[0] << std::endl;
+	std::string error_page = "/resources/error.html";
+	file_fd = open(error_page.c_str(), O_RDONLY);
+
+	this->status = READ_FILE;
 }

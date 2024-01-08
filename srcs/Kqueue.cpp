@@ -60,7 +60,7 @@ void Kqueue::disconnectClient(int client_fd)
 			break;
 		}
 	}
-	std::cout << "[disconnect client] " << client_fd << std::endl;
+	// std::cout << "[disconnect client] " << client_fd << std::endl;
 }
 
 void Kqueue::connectClient(int server_fd)
@@ -83,7 +83,7 @@ void Kqueue::connectClient(int server_fd)
 		}
 	}
 	v_client.push_back(client);
-	std::cout << "[connect new client] " << client_socket << std::endl;
+	// std::cout << "[connect new client] " << client_socket << std::endl;
 }
 
 bool Kqueue::isServer(int fd)
@@ -181,7 +181,6 @@ void	Kqueue::startServer()
 					{
 					case SEND_RESPONSE:
 						client->handleSocketWrite();
-
 						break;
 					case DISCONNECT:
 						disconnectClient(client->getSocketFd());

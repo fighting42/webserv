@@ -36,3 +36,14 @@ void	Server::setServer(std::map<std::string, std::string> m_server) { this->m_se
 void	Server::setLocation(std::map< std::string, std::map<std::string, std::string> > m_location) { this->m_location = m_location; }
 
 void	Server::setSocketFd(int server_socket) { socket_fd = server_socket; }
+
+std::vector<std::string> Server::findValue(std::map<std::string, std::string>& map, std::string key)
+{
+	std::vector<std::string> v_ret;
+	for (std::map<std::string, std::string>::iterator it = map.begin(); it != map.end(); ++it)
+	{
+		if (it->second == key)
+			v_ret.push_back(it->first);
+	}
+	return v_ret;
+}
