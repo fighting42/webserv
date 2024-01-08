@@ -5,7 +5,13 @@
 Client::Client() {}
 
 Client::Client(int client_socket)
-	: socket_fd(client_socket), status(RECV_REQUEST) {}
+	: socket_fd(client_socket), status(RECV_REQUEST)
+{
+	socket_fd = client_socket;
+	file_fd = -1;
+	status = RECV_REQUEST;
+	written = 0;
+}
 
 Client::~Client() {}
 
@@ -20,27 +26,34 @@ void	Client::setServer(Server* server) { this->server = server; }
 void    Client::findLocation()
 {
 	m_location = server->getLocation()[request.getUri()];
-
-	// std::cout << "---------- " << std::endl;
-	// for (std::map<std::string, std::string>::iterator it = m_location.begin(); it != m_location.end(); ++it)
-	// 	std::cout << it->first << " : " << it->second << std::endl;
-	// std::cout << "---------- " << std::endl;
+	// location 유효성체크
 }
 
-void Client::HandleSocketRead()
+void    Client::checkMethod()
+{
+	findLocation();
+	// handleCgi();
+	if (request.getMethod() == "GET")
+		handleGet();
+	else if (request.getMethod() == "DELETE")
+		handleDelete();
+}
+
+void Client::handleSocketRead()
 {
 	Request Req;
 	char buf[1024];
-	int msg_length = read(this->socket_fd, buf, 1024);
-	(void)msg_length; // make를 위한 void입니당 지워도됩니당
+	body_length = read(this->socket_fd, buf, 1024);
 	Req.ReqParsing(buf);
 	this->request = Req;
 }
 
-void Client::HandleSocketWrite()
+void Client::handleSocketWrite()
 {
-	//response = Response(); //한 곳에서 정의(?)필요
-	written = 0; //한 곳에서 정의(?)필요
+	// 	1. response 객체 사용, 응답 메세지 생성
+	// 	2. socket_fd write()
+	// 	3. setStatus(DISCONNECT)
+
 	const std::vector<char>& send_buffer = response.getSendBuffer();
 	ssize_t write_size = send_buffer.size() - written > 1024 ? 1024 : send_buffer.size() - written;
 	write_size = write(socket_fd, &send_buffer[written], write_size);
@@ -50,14 +63,24 @@ void Client::HandleSocketWrite()
 	}
 	written += write_size;
 	if (written == static_cast<ssize_t>(send_buffer.size())) //다쓰면 연결해제
-		status = DISCONNECT;	
+		status = DISCONNECT;
+}
+
+void Client::handleFileRead()
+{
+	// 	1. file_fd read()
+	// 	2. setStatus(SEND_RESPONSE)
 }
 
 void Client::handleGet()
 {
-	// 	1. m_location의 파일, 경로 등 유효성체크 
-	// 	2. index file open(), fd(리턴값)는 file_fd에 저장
-	// 	3. setStatus(READ_FILE)
+	// index file open(), fd(리턴값)는 file_fd에 저장
+	// body에 내용, body_length에 길이
 
 	this->status = READ_FILE;
+}
+
+void    Client::handleDelete()
+{
+	
 }

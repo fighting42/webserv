@@ -31,7 +31,7 @@ void	Kqueue::initServer(Config &config)
 			throw "listen() error";
 		fcntl(server_socket, F_SETFL, O_NONBLOCK);
 
-		change_events(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		changeEvents(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		(*it)->setSocketFd(server_socket);
 		v_server.push_back(server_socket);
 
@@ -39,7 +39,7 @@ void	Kqueue::initServer(Config &config)
 	}
 }
 
-void Kqueue::change_events(std::vector<struct kevent> &change_list, uintptr_t ident, int16_t filter,
+void Kqueue::changeEvents(std::vector<struct kevent> &change_list, uintptr_t ident, int16_t filter,
 							uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
 	struct kevent temp_event;
@@ -48,7 +48,7 @@ void Kqueue::change_events(std::vector<struct kevent> &change_list, uintptr_t id
 	change_list.push_back(temp_event);
 }
 
-void Kqueue::disconnect_client(int client_fd)
+void Kqueue::disconnectClient(int client_fd)
 {
 	close(client_fd);
 	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
@@ -63,15 +63,15 @@ void Kqueue::disconnect_client(int client_fd)
 	std::cout << "[disconnect client] " << client_fd << std::endl;
 }
 
-void Kqueue::connect_client(int server_fd)
+void Kqueue::connectClient(int server_fd)
 {
 	int client_socket;
 	if ((client_socket = accept(server_fd, NULL, NULL)) == -1)
 		throw "accept() error";
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
-	change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-	change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL); // 나눌까?
+	changeEvents(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // 나눌까?
 	
 	Client *client = new Client(client_socket);
 	for (std::vector<Server *>::iterator it = v_config.begin(); it != v_config.end(); ++it)
@@ -135,12 +135,12 @@ void	Kqueue::startServer()
 				if (isServer(curr_event->ident))
 					throw "server socket error";
 				else
-					disconnect_client(curr_event->ident);
+					disconnectClient(curr_event->ident);
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
 				if (isServer(curr_event->ident))
-					connect_client(curr_event->ident);
+					connectClient(curr_event->ident);
 				else if (isClient(curr_event->ident))
 				{
 					Client *client = getClient(curr_event->ident); (void)client;
@@ -148,22 +148,14 @@ void	Kqueue::startServer()
 					switch (client->getStatus())
 					{
 					case RECV_REQUEST:
-						client->HandleSocketRead();
-						// 	1. socket_fd read()
-						// 	2. request 객체 사용, 요청 메세지(read한 내용) 파싱 -> 1,2번 완료
-						client->findLocation(); // m_location 저장 함수, 만들어놨어욤~
-						client->handleGet();
-						// 	1. m_location의 파일, 경로 등 유효성체크 
-						// 	2. index file open(), fd(리턴값)는 file_fd에 저장
-						// 	3. setStatus(READ_FILE)
+						client->handleSocketRead();
+						client->checkMethod();
 						break;
 					case READ_FILE: 
-						// client->handleFileRead();
-						// 	1. file_fd read()
-						// 	2. setStatus(SEND_RESPONSE)
+						client->handleFileRead();
 						break;
 					case DISCONNECT:
-						disconnect_client(client->getSocketFd());
+						disconnectClient(client->getSocketFd());
 						break;
 					}
 
@@ -176,7 +168,7 @@ void	Kqueue::startServer()
 					if (n > 0)
 						std::cout << "[request message]" << std::endl << buf << std::endl;
 					else
-						disconnect_client(curr_event->ident);
+						disconnectClient(curr_event->ident);
 					// --- request test end ---
 				}
 			}
@@ -188,13 +180,11 @@ void	Kqueue::startServer()
 					switch (client->getStatus())
 					{
 					case SEND_RESPONSE:
-						client->HandleSocketWrite();
-						// 	1. response 객체 사용, 응답 메세지 생성
-						// 	2. socket_fd write()
-						// 	3. setStatus(DISCONNECT)
+						client->handleSocketWrite();
+
 						break;
 					case DISCONNECT:
-						disconnect_client(client->getSocketFd());
+						disconnectClient(client->getSocketFd());
 						break;
 					}
 
@@ -203,7 +193,7 @@ void	Kqueue::startServer()
 					char buf[1024] = "HTTP/1.1 200 OK\nContent-type:text/plain\nContent-Length:6\n\ntest!\n\n";
 					write(curr_event->ident, buf, sizeof(buf));
 					std::cout << "[response message]" << std::endl << buf << std::endl;
-					disconnect_client(curr_event->ident); 
+					disconnectClient(curr_event->ident); 
 					// --- response test end ---
 				}
 			}

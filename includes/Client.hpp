@@ -20,11 +20,15 @@ class Client
 {
     private:
         int socket_fd;
-        // int file_fd;
+        int file_fd;
         Status status;
         Request request;
         Response response;
         ssize_t written; //reponse의 적힌 사이즈변수
+        
+        std::string body;
+        int body_length;
+        
         Server *server;
         std::map<std::string, std::string> m_location;
 
@@ -38,11 +42,15 @@ class Client
         int     getStatus();
         void    setStatus(Status status);
         void    setServer(Server* server);
-        void    findLocation();
-        void    handleGet();
 
-        void HandleSocketRead();
-        void HandleSocketWrite();
+        void    findLocation();
+        void    checkMethod();
+        void    handleGet();
+        void    handleDelete();
+
+        void handleSocketRead();
+        void handleSocketWrite();
+        void handleFileRead();
 };
 
 #endif

@@ -19,7 +19,6 @@ void Response::setBody(const std::vector<char> &obj) { body = obj; }
 void Response::setStatus(const std::string &obj) { status = obj; }
 
 void Response::setContentType(const std::string &resource) {
-	(void)resource;
 	std::string file_type = resource.substr(resource.find('.') + 1);
 	//content_type = Utils::getMIMEType(file_type);
 }
@@ -108,9 +107,9 @@ std::map<std::string, std::string> Response::initializeMIMEMap() {
 	return m_mime;
 }
 
-std::string Response::getMIMEType(const std::string& file_type) {
-	if (m_mime.find(file_type) != m_mime.end())
-		return m_mime[file_type];
-	else
-		return "";
-}
+// std::string Response::getMIMEType(const std::string& file_type) {
+// 	if (m_mime.find(file_type) != m_mime.end())
+// 		return m_mime[file_type];
+// 	else
+// 		return "";
+// }
