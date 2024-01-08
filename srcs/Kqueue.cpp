@@ -144,7 +144,6 @@ void	Kqueue::startServer()
 				else if (isClient(curr_event->ident))
 				{
 					Client *client = getClient(curr_event->ident); (void)client;
-					
 					switch (client->getStatus())
 					{
 					case RECV_REQUEST:
@@ -162,13 +161,13 @@ void	Kqueue::startServer()
 					// --- request test ---
 					// read()로 http 요청 읽기 (curl로 보낸 요청메세지 buf에 담아 출력)
 					// 요거 테스트 하고싶으면 위 switch문 잠깐 주석달기!
-					char buf[1024];
-					int n = read(curr_event->ident, buf, sizeof(buf));
-					buf[n] = '\0';
-					if (n > 0)
-						std::cout << "[request message]" << std::endl << buf << std::endl;
-					else
-						disconnectClient(curr_event->ident);
+					// char buf[1024];
+					// int n = read(curr_event->ident, buf, sizeof(buf));
+					// buf[n] = '\0';
+					// if (n > 0)
+					// 	std::cout << "[request message]" << std::endl << buf << std::endl;
+					// else
+					// 	disconnectClient(curr_event->ident);
 					// --- request test end ---
 				}
 			}
@@ -189,10 +188,10 @@ void	Kqueue::startServer()
 
 					// --- response test ---
 					// 응답 생성 후 write()로 보내기 (응답메세지 buf에 담아 전송. 현재 buf 값은 예시! 요청에 따라서 달라져야함)
-					char buf[1024] = "HTTP/1.1 200 OK\nContent-type:text/plain\nContent-Length:6\n\ntest!\n\n";
-					write(curr_event->ident, buf, sizeof(buf));
-					std::cout << "[response message]" << std::endl << buf << std::endl;
-					disconnectClient(curr_event->ident); 
+					// char buf[1024] = "HTTP/1.1 200 OK\nContent-type:text/plain\nContent-Length:6\n\ntest!\n\n";
+					// write(curr_event->ident, buf, sizeof(buf));
+					// std::cout << "[response message]" << std::endl << buf << std::endl;
+					// disconnectClient(curr_event->ident); 
 					// --- response test end ---
 				}
 			}

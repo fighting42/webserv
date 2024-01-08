@@ -26,6 +26,7 @@ void    Client::findLocation()
 	m_location = server->getLocation()[request.getUri()];
 	if (m_location.size() == 0) // 404
 		handleError();
+	// 예외처리~~
 }
 
 void    Client::checkMethod()
@@ -33,21 +34,25 @@ void    Client::checkMethod()
 	findLocation();
 	// handleCgi();
 	if (request.getMethod() == "GET")
-		handleError();
-		// handleGet();
+		handleGet();
 	else if (request.getMethod() == "DELETE")
 		handleDelete();
 }
 
 void Client::handleSocketRead()
 {
+	std::cout << "handleSocketRead()" << std::endl;
+
 	char buf[1024];
 	body_length = read(this->socket_fd, buf, 1024);
+	std::cout << "[request message]" << std::endl << buf << std::endl;
 	request.ReqParsing(buf);
 }
 
 void Client::handleSocketWrite()
 {
+	std::cout << "handleSocketWrite()" << std::endl;
+	// std::cout << "[response message]" << std::endl;
 	// 	1. response 객체 사용, 응답 메세지 생성
 	// 	2. socket_fd write()
 	// 	3. setStatus(DISCONNECT)
@@ -66,12 +71,22 @@ void Client::handleSocketWrite()
 
 void Client::handleFileRead()
 {
+	std::cout << "handleFileRead()" << std::endl;
 	// 	1. file_fd read()
 	// 	2. setStatus(SEND_RESPONSE)
+
+	char buf[1024];
+	int n = read(file_fd, buf, sizeof(buf));
+	buf[n] = '\0';
+	body = buf;
+	if (n <= 0)
+		status = DISCONNECT;
+	status = SEND_RESPONSE;
 }
 
 void Client::handleGet()
 {
+	std::cout << "handleGet()" << std::endl;
 	// index file open(), fd(리턴값)는 file_fd에 저장
 	// body에 내용, body_length에 길이
 
@@ -80,19 +95,22 @@ void Client::handleGet()
 
 void    Client::handleDelete()
 {
-	
+	std::cout << "handleDelete()" << std::endl;
+
 }
 
 void    Client::handleCgi()
 {
+	std::cout << "handleCgi()" << std::endl;
 
 }
 
 void    Client::handleError()
 {
+	std::cout << "handleError()" << std::endl;
 	// handleGet()이랑 비슷. server, config에서 error_page 찾아서 open()
 	// server block의 error_page 우선 적용, 없으면 location, 그것도 없으면 default
-	
+
 	// std::cout << server->findValue(m_location, "error_page")[0] << std::endl;
 	std::string error_page = "/resources/error.html";
 	file_fd = open(error_page.c_str(), O_RDONLY);
