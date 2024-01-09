@@ -104,8 +104,7 @@ void Client::handleGet()
 	std::ifstream fout(idx.c_str());
   	if (!fout.is_open())
 		return ;
-	this->body = std::string((std::istreambuf_iterator<char>(fout)),
-                std::istreambuf_iterator<char>());
+	this->body = std::string((std::istreambuf_iterator<char>(fout)), std::istreambuf_iterator<char>());
 	std::cout << this->body << std::endl;
 	// index file open(), fd(리턴값)는 file_fd에 저장
 	//response.setContentType_지우지말아주십셩,,희희,,
