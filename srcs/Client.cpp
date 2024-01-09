@@ -54,8 +54,8 @@ void Client::handleSocketRead()
 
 void Client::handleSocketWrite()
 {
-	std::cout << "handleSocketWrite()" << std::endl;
-	// std::cout << "[response message]" << std::endl;
+	//std::cout << "handleSocketWrite()" << std::endl;
+	//std::cout << "[response message]" << std::endl;
 	// 	1. response 객체 사용, 응답 메세지 생성
 	// 	2. socket_fd write()
 	// 	3. setStatus(DISCONNECT)
