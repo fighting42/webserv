@@ -5,7 +5,6 @@
 Client::Client() {}
 
 Client::Client(int client_socket)
-	: socket_fd(client_socket), status(RECV_REQUEST)
 {
 	socket_fd = client_socket;
 	file_fd = -1;
@@ -48,17 +47,14 @@ void Client::handleSocketRead()
 
 	char buf[1024];
 	body_length = read(this->socket_fd, buf, 1024);
-	std::cout << "[request message]" << std::endl << buf << std::endl;
 	request.ReqParsing(buf);
+
+	std::cout << BLUE << "[request message]" << std::endl << buf << RESET << std::endl;
 }
 
 void Client::handleSocketWrite()
 {
-	//std::cout << "handleSocketWrite()" << std::endl;
-	//std::cout << "[response message]" << std::endl;
-	// 	1. response 객체 사용, 응답 메세지 생성
-	// 	2. socket_fd write()
-	// 	3. setStatus(DISCONNECT)
+	std::cout << "handleSocketWrite()" << std::endl;
 
 	const std::vector<char>& send_buffer = response.getSendBuffer();
 	ssize_t write_size = send_buffer.size() - written > 1024 ? 1024 : send_buffer.size() - written;
@@ -70,6 +66,8 @@ void Client::handleSocketWrite()
 	written += write_size;
 	if (written == static_cast<ssize_t>(send_buffer.size())) //다쓰면 연결해제
 		status = DISCONNECT;
+	
+	std::cout << CYAN << "[response message]" << std::endl << &send_buffer[written - write_size] << RESET << std::endl;
 }
 
 void Client::handleFileRead()
@@ -105,11 +103,33 @@ void    Client::handleCgi()
 {
 	std::cout << "handleCgi()" << std::endl;
 
+	// int fds[2];
+	// pid_t pid = fork();
+
+	// char *args[3];
+	// char **envp;
+
+	// if (pid < 0)
+	// 	throw "fork error"; // 500
+	// else if (pid == 0) // 자식
+	// {
+	// 	args[0] = "cgi-bin/cgi_tester";
+	// 	args[1] = NULL;
+	// 	args[2] = NULL;
+
+	// 	execve(args[0], args, envp);
+	// 	throw "cgi execve error";
+	// }
+	// else // 부모
+	// {
+
+	// }
 }
 
 void    Client::handleError()
 {
 	std::cout << "handleError()" << std::endl;
+
 	// handleGet()이랑 비슷. server, config에서 error_page 찾아서 open()
 	// server block의 error_page 우선 적용, 없으면 location, 그것도 없으면 default
 

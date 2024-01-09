@@ -1,6 +1,9 @@
 #ifndef KQUEUE_HPP
 #define KQUEUE_HPP
 
+#define RESET   "\033[0m"
+#define GREEN   "\033[32m"
+
 #include <iostream>
 #include <sstream>
 #include <string>

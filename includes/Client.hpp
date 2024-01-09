@@ -1,6 +1,10 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#define RESET   "\033[0m"
+#define BLUE    "\033[34m"
+#define CYAN    "\033[36m"
+
 #include <fcntl.h>
 #include <unistd.h>
 
