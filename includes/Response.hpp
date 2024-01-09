@@ -21,7 +21,6 @@ class Response
 		// int		 status; // make를 위한 주석입니당 지워도됩니당
 
 		std::vector<char> getStatusMsg() const;
-		std::string size_tToString(size_t value);
 		std::string getMIMEType(const std::string& file_type);
 		std::map<std::string, std::string> initializeMIMEMap();
 		void makeHeaderLine();

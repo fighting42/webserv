@@ -75,14 +75,10 @@ std::vector<char> Response::getStatusMsg() const
 	return std::vector<char>(status_msg.begin(), status_msg.end());
 }
 
-std::string Response::size_tToString(size_t value) {
-    return std::to_string(value);
-}
-
 void Response::makeHeaderLine() {
 	headers["Date"] = getDate(NULL);
 	if (body.size() != 0)
-		headers["Content-Length"] = size_tToString(body.size());
+		headers["Content-Length"] = std::to_string(body.size());
 	if (content_type != "")
 		headers["Content-Type"] = content_type;
 }
