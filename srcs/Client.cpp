@@ -11,6 +11,7 @@ Client::Client(int client_socket)
 	file_fd = -1;
 	status = RECV_REQUEST;
 	written = 0;
+	response = Response();
 }
 
 Client::~Client() {}
@@ -77,10 +78,12 @@ void Client::handleFileRead()
 
 	char buf[1024];
 	body_length = read(file_fd, buf, sizeof(buf));
+	response.getBody(buf, body_length);
 	buf[body_length] = '\0';
 	body = buf;
 	if (body_length <= 0)
 		status = DISCONNECT;
+	response.makeResponse();
 	status = SEND_RESPONSE;
 }
 
@@ -88,7 +91,7 @@ void Client::handleGet()
 {
 	std::cout << "handleGet()" << std::endl;
 	// index file open(), fd(리턴값)는 file_fd에 저장
-
+	//response.setContentType_지우지말아주십셩,,희희,,
 	this->status = READ_FILE;
 }
 
@@ -114,5 +117,6 @@ void    Client::handleError()
 	std::string error_page = "resources/error.html";
 	file_fd = open(error_page.c_str(), O_RDONLY);
 
+	//response.setContentType_지우지말아주십셩,,희희,,
 	this->status = READ_FILE;
 }

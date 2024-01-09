@@ -20,7 +20,7 @@ void Response::setStatus(const std::string &obj) { status = obj; }
 
 void Response::setContentType(const std::string &resource) {
 	std::string file_type = resource.substr(resource.find('.') + 1);
-	//content_type = Utils::getMIMEType(file_type);
+	content_type = getMIMEType(file_type);
 }
 
 void Response::print() {
@@ -75,10 +75,14 @@ std::vector<char> Response::getStatusMsg() const
 	return std::vector<char>(status_msg.begin(), status_msg.end());
 }
 
+std::string Response::size_tToString(size_t value) {
+    return std::to_string(value);
+}
+
 void Response::makeHeaderLine() {
 	headers["Date"] = getDate(NULL);
 	if (body.size() != 0)
-		//headers["Content-Length"] = ntos(body.size());
+		headers["Content-Length"] = size_tToString(body.size());
 	if (content_type != "")
 		headers["Content-Type"] = content_type;
 }
@@ -104,12 +108,17 @@ std::map<std::string, std::string> Response::initializeMIMEMap() {
 	m_mime["png"] = "image/png";
 	m_mime["ico"] = "image/x-icon";
 	m_mime["binary"] = "multipart/form-data";
-	return m_mime;
+	return m_mime;  
 }
 
-// std::string Response::getMIMEType(const std::string& file_type) {
-// 	if (m_mime.find(file_type) != m_mime.end())
-// 		return m_mime[file_type];
-// 	else
-// 		return "";
-// }
+std::string Response::getMIMEType(const std::string& file_type) {
+	if (m_mime.find(file_type) != m_mime.end())
+		return m_mime[file_type];
+	else
+		return "";
+}
+
+void Response::getBody(char *buffer, int read_size) {
+	for (int i = 0; i < read_size; i++)
+		body.push_back(buffer[i]);
+}

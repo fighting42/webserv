@@ -17,10 +17,11 @@ class Response
 		//std::string status_msg;
 		std::map<std::string, std::string> headers;
 		std::vector<char> body;
-		static std::map<std::string, std::string> m_mime;
+		std::map<std::string, std::string> m_mime;
 		// int		 status; // make를 위한 주석입니당 지워도됩니당
 
 		std::vector<char> getStatusMsg() const;
+		std::string size_tToString(size_t value);
 		std::string getMIMEType(const std::string& file_type);
 		std::map<std::string, std::string> initializeMIMEMap();
 		void makeHeaderLine();
@@ -35,17 +36,11 @@ class Response
 		void setBody(const std::vector<char>& obj);
 		void setStatus(const std::string& obj);
 		void setContentType(const std::string& resource);
+		void getBody(char* buffer, int read_size);
 
 		void print();
 		void makeResponse();
 		
 };
-
-template <typename T>
-std::string ntos(T n) {
-	std::stringstream ss;
-	ss << n;
-	return ss.str();
-}
 
 #endif
