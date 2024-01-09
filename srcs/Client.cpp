@@ -36,8 +36,7 @@ void    Client::checkMethod()
 	findLocation();
 	// handleCgi();
 	if (request.getMethod() == "GET")
-		// handleGet();
-		handleError();
+		handleGet();
 	else if (request.getMethod() == "DELETE")
 		handleDelete();
 }
