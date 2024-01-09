@@ -39,6 +39,7 @@ class Client
         ~Client();
 
         int     getSocketFd();
+        int     getFileFd();
         int     getStatus();
         void    setServer(Server* server);
 

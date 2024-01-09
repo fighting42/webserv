@@ -17,6 +17,8 @@ Client::~Client() {}
 
 int Client::getSocketFd() { return socket_fd; }
 
+int Client::getFileFd() { return file_fd; }
+
 int Client::getStatus() { return status; }
 
 void	Client::setServer(Server* server) { this->server = server; }
@@ -34,7 +36,8 @@ void    Client::checkMethod()
 	findLocation();
 	// handleCgi();
 	if (request.getMethod() == "GET")
-		handleGet();
+		// handleGet();
+		handleError();
 	else if (request.getMethod() == "DELETE")
 		handleDelete();
 }
@@ -72,14 +75,12 @@ void Client::handleSocketWrite()
 void Client::handleFileRead()
 {
 	std::cout << "handleFileRead()" << std::endl;
-	// 	1. file_fd read()
-	// 	2. setStatus(SEND_RESPONSE)
 
 	char buf[1024];
-	int n = read(file_fd, buf, sizeof(buf));
-	buf[n] = '\0';
+	body_length = read(file_fd, buf, sizeof(buf));
+	buf[body_length] = '\0';
 	body = buf;
-	if (n <= 0)
+	if (body_length <= 0)
 		status = DISCONNECT;
 	status = SEND_RESPONSE;
 }
@@ -88,7 +89,6 @@ void Client::handleGet()
 {
 	std::cout << "handleGet()" << std::endl;
 	// index file open(), fd(리턴값)는 file_fd에 저장
-	// body에 내용, body_length에 길이
 
 	this->status = READ_FILE;
 }
@@ -112,7 +112,7 @@ void    Client::handleError()
 	// server block의 error_page 우선 적용, 없으면 location, 그것도 없으면 default
 
 	// std::cout << server->findValue(m_location, "error_page")[0] << std::endl;
-	std::string error_page = "/resources/error.html";
+	std::string error_page = "resources/error.html";
 	file_fd = open(error_page.c_str(), O_RDONLY);
 
 	this->status = READ_FILE;

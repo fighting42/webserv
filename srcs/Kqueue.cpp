@@ -31,7 +31,7 @@ void	Kqueue::initServer(Config &config)
 			throw "listen() error";
 		fcntl(server_socket, F_SETFL, O_NONBLOCK);
 
-		changeEvents(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		changeEvents(server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		(*it)->setSocketFd(server_socket);
 		v_server.push_back(server_socket);
 
@@ -39,8 +39,7 @@ void	Kqueue::initServer(Config &config)
 	}
 }
 
-void Kqueue::changeEvents(std::vector<struct kevent> &change_list, uintptr_t ident, int16_t filter,
-							uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
+void Kqueue::changeEvents(uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
 	struct kevent temp_event;
 
@@ -50,7 +49,6 @@ void Kqueue::changeEvents(std::vector<struct kevent> &change_list, uintptr_t ide
 
 void Kqueue::disconnectClient(int client_fd)
 {
-	close(client_fd);
 	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
 	{
 		if ((*it)->getSocketFd() == client_fd)
@@ -60,7 +58,8 @@ void Kqueue::disconnectClient(int client_fd)
 			break;
 		}
 	}
-	// std::cout << "[disconnect client] " << client_fd << std::endl;
+	close(client_fd);
+	std::cout << "[disconnect client] " << client_fd << std::endl;
 }
 
 void Kqueue::connectClient(int server_fd)
@@ -70,8 +69,7 @@ void Kqueue::connectClient(int server_fd)
 		throw "accept() error";
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
-	changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL); // 나눌까?
-	changeEvents(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL); // 나눌까?
+	changeEvents(client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	
 	Client *client = new Client(client_socket);
 	for (std::vector<Server *>::iterator it = v_config.begin(); it != v_config.end(); ++it)
@@ -83,7 +81,7 @@ void Kqueue::connectClient(int server_fd)
 		}
 	}
 	v_client.push_back(client);
-	// std::cout << "[connect new client] " << client_socket << std::endl;
+	std::cout << "[connect new client] " << client_socket << std::endl;
 }
 
 bool Kqueue::isServer(int fd)
@@ -100,6 +98,8 @@ bool Kqueue::isClient(int fd)
 	{
 		if ((*it)->getSocketFd() == fd)
 			return true;
+		else if ((*it)->getFileFd() == fd)
+			return true;
 	}
 	return false;
 }
@@ -110,6 +110,8 @@ Client* Kqueue::getClient(int fd)
 	for (it = v_client.begin(); it != v_client.end(); ++it)
 	{
 		if ((*it)->getSocketFd() == fd)
+			break;
+		else if ((*it)->getFileFd() == fd)
 			break;
 	}
 	return *it;
@@ -148,10 +150,15 @@ void	Kqueue::startServer()
 					{
 					case RECV_REQUEST:
 						client->handleSocketRead();
+						changeEvents(client->getSocketFd(), EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 						client->checkMethod();
+						changeEvents(client->getFileFd(), EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 						break;
 					case READ_FILE: 
 						client->handleFileRead();
+						changeEvents(client->getFileFd(), EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+						close(client->getFileFd());
+						changeEvents(client->getSocketFd(), EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 						break;
 					case DISCONNECT:
 						disconnectClient(client->getSocketFd());
@@ -183,6 +190,7 @@ void	Kqueue::startServer()
 						break;
 					case DISCONNECT:
 						disconnectClient(client->getSocketFd());
+						changeEvents(client->getSocketFd(), EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 						break;
 					}
 

@@ -34,8 +34,8 @@ class Kqueue
     ~Kqueue();
     void initServer(Config& config);
     void startServer();
-    void changeEvents(std::vector<struct kevent> &change_list, uintptr_t ident, int16_t filter, 
-                        uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
+    void changeEvents(uintptr_t ident, int16_t filter, \
+      uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
     void connectClient(int server_fd);
     void disconnectClient(int client_fd);
 
