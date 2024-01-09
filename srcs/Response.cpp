@@ -4,7 +4,6 @@ Response::Response() : status("200") {}
 
 Response &Response::operator=(const Response &obj) 
 {
-    version = obj.version;
 	send_buffer = obj.send_buffer;
 	status = obj.status;
 	content_type = obj.content_type;
@@ -71,7 +70,7 @@ std::vector<char> Response::getStatusMsg() const
 		m_status["500"] = "Internal Server Error";
 	}
 
-	std::string status_msg = version + " " + status + " " + m_status[status] + "\r\n";
+	std::string status_msg = "HTTP/1.1 " + status + " " + m_status[status] + "\r\n";
 	return std::vector<char>(status_msg.begin(), status_msg.end());
 }
 

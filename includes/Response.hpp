@@ -10,7 +10,6 @@
 class Response
 {
 	private:
-		std::string version;
 		std::vector<char> send_buffer;
 		std::string status;
 		std::string content_type;
