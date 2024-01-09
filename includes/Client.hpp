@@ -7,6 +7,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <fstream>
 
 #include "Request.hpp"
 #include "Response.hpp"
