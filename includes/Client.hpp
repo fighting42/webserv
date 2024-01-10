@@ -58,7 +58,7 @@ class Client
         void    handleGet();
         void    handleDelete();
         void    handleCgi();
-        void    handleError();
+        void    handleError(const std::string &error_code);
 };
 
 #endif

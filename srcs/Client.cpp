@@ -27,7 +27,7 @@ void    Client::findLocation()
 {
 	m_location = server->getLocation()[request.getUri()];
 	if (m_location.size() == 0) // 404
-		handleError();
+		handleError("404");
 	// 예외처리~~
 }
 
@@ -147,7 +147,7 @@ void    Client::handleCgi()
 	// }
 }
 
-void    Client::handleError()
+void    Client::handleError(const std::string &error_code)
 {
 	std::cout << "handleError()" << std::endl;
 
