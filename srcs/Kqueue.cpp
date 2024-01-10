@@ -175,9 +175,9 @@ void	Kqueue::startServer()
 					{
 					case SEND_RESPONSE:
 						client->handleSocketWrite();
-						changeEvents(client->getSocketFd(), EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 						break;
 					case DISCONNECT:
+						changeEvents(client->getSocketFd(), EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 						disconnectClient(client->getSocketFd());
 						break;
 					}

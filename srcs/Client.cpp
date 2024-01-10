@@ -53,8 +53,8 @@ void Client::handleSocketRead()
 	body_length = read(this->socket_fd, buf, 1024);
 	buf[body_length] = '\0';
 	request.ReqParsing(buf);
-	if (request.getStatus() != "200")
-		handleError(request.getStatus()); // 수정
+	if (request.getStatus() != "200") // 다 404 리턴중임당ㅎㅎ..ㅎ..ㅎ.ㅎㅎ
+		handleError(request.getStatus()); // 예진 수정
 	
 	std::cout << BLUE << "[request message]" << std::endl << buf << RESET << std::endl;
 }
@@ -67,7 +67,7 @@ void Client::handleSocketWrite()
 	ssize_t write_size = send_buffer.size() - written > 1024 ? 1024 : send_buffer.size() - written;
 	write_size = write(socket_fd, &send_buffer[written], write_size);
 	if (write_size <= 0)
-		handleError("500"); // 수정
+		handleError("500"); // 예진 수정
 	written += write_size;
 	if (written == static_cast<ssize_t>(send_buffer.size())) //다쓰면 연결해제
 		status = DISCONNECT;
@@ -82,7 +82,7 @@ void Client::handleFileRead()
 	char buf[1024];
 	body_length = read(file_fd, buf, sizeof(buf));
 	if (body_length <= 0)
-		handleError("500"); // 수정
+		handleError("500"); // 예진 수정
 	buf[body_length] = '\0';
 	body = buf;
 	response.getBody(buf, body_length);
@@ -101,10 +101,10 @@ void Client::handleGet() //디폴트 파일 말고 경로 들어왔을 때 열�
 	std::vector<std::string> v_idx = server->findValue(this->m_location, "index");
 	std::string idx = rsrcs + v_idx.back();
 	if (access(idx.c_str(), F_OK) == -1)
-		handleError("404"); // 수정
+		handleError("404"); // 예진 수정
 	this->file_fd = open(idx.c_str(), O_RDONLY);
 	if (this->file_fd == -1)
-		handleError("500"); // 수정
+		handleError("500"); // 예진 수정
 	//파일 내용 저장
 	std::ifstream fout(idx.c_str());
 	if (!fout.is_open())
@@ -122,9 +122,9 @@ void    Client::handleDelete()
 	std::string root = v_root.back();
 	std::string rsrcs = root + this->request.getUri();
 	if (access(rsrcs.c_str(), F_OK) == -1) //파일 유효성 검사
-		handleError("404"); // 수정
+		handleError("404"); // 예진 수정
 	if (std::remove(rsrcs.c_str())) //파일 삭제 실패
-		handleError("500"); // 수정
+		handleError("500"); // 예진 수정
 	this->status = SEND_RESPONSE;
 }
 
