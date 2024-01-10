@@ -1,12 +1,13 @@
 #include "../includes/Request.hpp"
 
 Request::Request()
-    :method("default"), uri("default"), version("default"), body("default")
+    :method("default"), uri("default"), version("default"), body("default"), status("200")
 {}
 
 const std::string &Request::getMethod() const { return this->method; }
 const std::string &Request::getUri() const { return this->uri; }
 const std::string &Request::getHost() const { return this->host; }
+const std::string &Request::getStatus() const { return this->status; }
 
 Request::~Request(){}
 
@@ -59,18 +60,22 @@ std::string Request::removeSpace(std::string str)
     return (tmp);
 }
 
+//"0/n" chunked라면 content-length(16진법)가 지금 들어온 바디 size 체크 용으로만 사용하고 마지막 문자 나올 떄까지 받아
+
 void Request::ReqParsing(std::string msg)
 {
     this->req_msg = msg;
     std::size_t found = this->req_msg.find("\n");
     std::string first = this->req_msg.substr(0, found);
     std::vector<std::string> firstline;
-
     firstline = ReqSplit(first, ' ');
     this->method = firstline[0];
+    if (this->method != "GET" && this->method != "POST" && this->method != "DELETE")
+        this->status = "405";
     this->uri = firstline[1];
     this->version = firstline[2];
-
+    if (this->version != "http/1.1")
+        this->status = "404";
     std::size_t found_tmp;
     std::string line;
     std::vector<std::string> vline;

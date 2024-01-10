@@ -48,7 +48,8 @@ void Client::handleSocketRead()
 	char buf[1024];
 	body_length = read(this->socket_fd, buf, 1024);
 	request.ReqParsing(buf);
-
+	if (request.getStatus() != "200")
+		handleError(request.getStatus()); // 함수 끝내야할지 수정해야 합니다!
 	std::cout << BLUE << "[request message]" << std::endl << buf << RESET << std::endl;
 }
 
@@ -94,10 +95,13 @@ void Client::handleGet()
 	//index 파일 오픈
 	std::vector<std::string> v_idx = server->findValue(this->m_location, "index");
 	std::string idx = rsrcs + v_idx.back();
-	std::cout << idx << std::endl;
+	if (access(idx.c_str(), F_OK) == -1) {
+		handleError("404");
+		return ;
+	}
 	this->file_fd = open(idx.c_str(), O_RDONLY);
-	if (this->file_fd == -1){
-		std::cout << "파일 없음" << std::endl;
+	if (this->file_fd == -1) {
+		handleError("500"); // 내부적으로 처리되어 기본적인 http상태코드 (internal server err)
 		return ;
 	}
 	//파일 내용 저장
@@ -105,7 +109,6 @@ void Client::handleGet()
   	if (!fout.is_open())
 		return ;
 	this->body = std::string((std::istreambuf_iterator<char>(fout)), std::istreambuf_iterator<char>());
-	std::cout << this->body << std::endl;
 	// index file open(), fd(리턴값)는 file_fd에 저장
 	//response.setContentType_지우지말아주십셩,,희희,,
 	this->status = READ_FILE;

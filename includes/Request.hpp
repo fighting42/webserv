@@ -17,6 +17,7 @@ class Request
     std::string host;
 		std::map<std::string, std::string> headers;
 		std::string body;
+    std::string status;
     
   public:
     Request();
@@ -24,6 +25,7 @@ class Request
     const std::string& getMethod() const;
 	  const std::string& getUri() const;
 	  const std::string& getHost() const;
+	  const std::string& getStatus() const;
     void PrintRequest();
     void ReqParsing(std::string msg);
     std::vector<std::string> ReqSplit(std::string input, char delimiter);
