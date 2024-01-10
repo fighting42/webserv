@@ -86,7 +86,7 @@ void Client::handleFileRead()
 	status = SEND_RESPONSE;
 }
 
-void Client::handleGet()
+void Client::handleGet() //디폴트 파일 말고 경로 들어왔을 때 열리도록 추가
 {
 	std::cout << "handleGet()" << std::endl;
 	std::vector<std::string> v_root = server->findValue(this->m_location, "root");
@@ -117,7 +117,16 @@ void Client::handleGet()
 void    Client::handleDelete()
 {
 	std::cout << "handleDelete()" << std::endl;
-
+	std::vector<std::string> v_root = server->findValue(this->m_location, "root");
+	std::string root = v_root.back();
+	std::string rsrcs = root + this->request.getUri();
+	if (access(rsrcs.c_str(), F_OK) == -1) { //파일 유효성 검사
+		handleError("404"); // 함수 끝나야 하는지 수정해야됨!
+	}
+	if (std::remove(rsrcs.c_str())) { //파일 삭제 실패
+		handleError("500"); // 함수 끝나야 하는지 수정해야됨!
+	}
+	this->status = SEND_RESPONSE;
 }
 
 void    Client::handleCgi()
