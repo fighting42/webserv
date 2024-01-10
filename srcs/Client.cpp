@@ -47,7 +47,9 @@ void Client::handleSocketRead()
 
 	char buf[1024];
 	body_length = read(this->socket_fd, buf, 1024);
+	buf[body_length] = '\0';
 	request.ReqParsing(buf);
+	std::cout << request.getStatus() << std::endl;
 	if (request.getStatus() != "200")
 		handleError(request.getStatus()); // 함수 끝내야할지 수정해야 합니다!
 	std::cout << BLUE << "[request message]" << std::endl << buf << RESET << std::endl;
@@ -77,8 +79,8 @@ void Client::handleFileRead()
 
 	char buf[1024];
 	body_length = read(file_fd, buf, sizeof(buf));
-	response.getBody(buf, body_length);
 	buf[body_length] = '\0';
+	response.getBody(buf, body_length);
 	body = buf;
 	if (body_length <= 0)
 		status = DISCONNECT;
@@ -106,7 +108,7 @@ void Client::handleGet() //디폴트 파일 말고 경로 들어왔을 때 열�
 	}
 	//파일 내용 저장
 	std::ifstream fout(idx.c_str());
-  	if (!fout.is_open())
+	if (!fout.is_open())
 		return ;
 	this->body = std::string((std::istreambuf_iterator<char>(fout)), std::istreambuf_iterator<char>());
 	// index file open(), fd(리턴값)는 file_fd에 저장
@@ -137,15 +139,20 @@ void    Client::handleCgi()
 	// pid_t pid = fork();
 
 	// char *args[3];
-	// char **envp;
+	// char *envp[5];
+	// args[0] = "cgi-bin/cgi_tester";
+	// args[1] = NULL;
+	// args[2] = NULL;
+	// envp[0] = "REQUEST_METHOD=GET";
+	// envp[1] = "SERVER_PROTOCOL=HTTP/1.1";
+	// envp[2] = "PATH_INFO=cgi-bin/cgi_tester";
+	// envp[3] = "";
+	// envp[4] = NULL;
 
 	// if (pid < 0)
 	// 	throw "fork error"; // 500
 	// else if (pid == 0) // 자식
 	// {
-	// 	args[0] = "cgi-bin/cgi_tester";
-	// 	args[1] = NULL;
-	// 	args[2] = NULL;
 
 	// 	execve(args[0], args, envp);
 	// 	throw "cgi execve error";
@@ -159,7 +166,7 @@ void    Client::handleCgi()
 void    Client::handleError(const std::string &error_code)
 {
 	std::cout << "handleError()" << std::endl;
-
+	(void)error_code;
 	// handleGet()이랑 비슷. server, config에서 error_page 찾아서 open()
 	// server block의 error_page 우선 적용, 없으면 location, 그것도 없으면 default
 

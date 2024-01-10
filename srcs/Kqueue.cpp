@@ -136,8 +136,8 @@ void	Kqueue::startServer()
 			{
 				if (isServer(curr_event->ident))
 					throw "server socket error";
-				// else
-					// disconnectClient(curr_event->ident);
+				// else if (isClient(curr_event->ident))
+				// 	disconnectClient(curr_event->ident);
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
