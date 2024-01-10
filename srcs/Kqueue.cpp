@@ -161,7 +161,7 @@ void	Kqueue::startServer()
 						changeEvents(client->getSocketFd(), EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 						break;
 					case DISCONNECT:
-						// disconnectClient(client->getSocketFd());
+						disconnectClient(client->getSocketFd());
 						break;
 					}
 				}
@@ -175,10 +175,10 @@ void	Kqueue::startServer()
 					{
 					case SEND_RESPONSE:
 						client->handleSocketWrite();
+						changeEvents(client->getSocketFd(), EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 						break;
 					case DISCONNECT:
 						disconnectClient(client->getSocketFd());
-						changeEvents(client->getSocketFd(), EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 						break;
 					}
 				}

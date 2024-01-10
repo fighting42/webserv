@@ -13,12 +13,13 @@
 #include "Response.hpp"
 #include "Server.hpp"
 
-enum Status // 언제 값 바꿔주는지
+enum Status // 다음에 할 작업으로 status 바꿔주는겁니다요
 {
-	RECV_REQUEST, // client 객체 생성시
-	READ_FILE, // handleGet() 함수 마지막
-	SEND_RESPONSE, // handleFileRead() 함수 마지막
-	DISCONNECT // handleSocketWrite() 함수 마지막 또는 error?
+	RECV_REQUEST, 
+	READ_FILE,
+    WRITE_FILE,
+	SEND_RESPONSE,
+	DISCONNECT
 }; 
 
 class Client
@@ -57,6 +58,7 @@ class Client
         
         void    handleGet();
         void    handleDelete();
+        void    handlePost();
         void    handleCgi();
         void    handleError(const std::string &error_code);
 };
