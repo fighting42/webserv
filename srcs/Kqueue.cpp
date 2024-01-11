@@ -1,6 +1,7 @@
 #include "../includes/Kqueue.hpp"
 #include "../includes/Config.hpp"
 #include "../includes/Client.hpp"
+#include "../includes/Event.hpp"
 
 Kqueue::Kqueue() {}
 
@@ -31,7 +32,7 @@ void	Kqueue::initServer(Config &config)
 			throw "listen() error";
 		fcntl(server_socket, F_SETFL, O_NONBLOCK);
 
-		changeEvents(server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		Event::changeEvents(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		(*it)->setSocketFd(server_socket);
 		v_server.push_back(server_socket);
 
@@ -39,19 +40,12 @@ void	Kqueue::initServer(Config &config)
 	}
 }
 
-void Kqueue::changeEvents(uintptr_t ident, int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
-{
-	struct kevent temp_event;
-
-	EV_SET(&temp_event, ident, filter, flags, fflags, data, udata);
-	change_list.push_back(temp_event);
-}
-
 void Kqueue::disconnectClient(int client_fd)
 {
+	Event::changeEvents(change_list, client_fd, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
 	{
-		if ((*it)->getSocketFd() == client_fd)
+		if ((*it)->socket_fd == client_fd)
 		{
 			v_client.erase(it);
 			delete *it;
@@ -69,14 +63,14 @@ void Kqueue::connectClient(int server_fd)
 		throw "accept() error";
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
-	changeEvents(client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	Event::changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	
 	Client *client = new Client(client_socket);
 	for (std::vector<Server *>::iterator it = v_config.begin(); it != v_config.end(); ++it)
 	{
 		if ((*it)->getSocketFd() == server_fd)
 		{
-			client->setServer(*it);
+			client->server = *it;
 			break;
 		}
 	}
@@ -96,9 +90,9 @@ bool Kqueue::isClient(int fd)
 {
 	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
 	{
-		if ((*it)->getSocketFd() == fd)
+		if ((*it)->socket_fd == fd)
 			return true;
-		else if ((*it)->getFileFd() == fd)
+		else if ((*it)->file_fd == fd)
 			return true;
 	}
 	return false;
@@ -109,9 +103,9 @@ Client* Kqueue::getClient(int fd)
 	std::vector<Client *>::iterator it;
 	for (it = v_client.begin(); it != v_client.end(); ++it)
 	{
-		if ((*it)->getSocketFd() == fd)
+		if ((*it)->socket_fd == fd)
 			break;
-		else if ((*it)->getFileFd() == fd)
+		else if ((*it)->file_fd == fd)
 			break;
 	}
 	return *it;
@@ -120,6 +114,7 @@ Client* Kqueue::getClient(int fd)
 void	Kqueue::startServer()
 {
 	int new_events;
+	struct kevent event_list[8];
 	struct kevent* curr_event;
 
 	while (1)
@@ -145,23 +140,18 @@ void	Kqueue::startServer()
 					connectClient(curr_event->ident);
 				else if (isClient(curr_event->ident))
 				{
-					Client *client = getClient(curr_event->ident); (void)client;
-					switch (client->getStatus())
+					Client *client = getClient(curr_event->ident);
+					switch ((int)client->status)
 					{
-					case RECV_REQUEST:
-						client->handleSocketRead();
-						changeEvents(client->getSocketFd(), EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-						client->checkMethod();
-						changeEvents(client->getFileFd(), EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+					case READ_SOCKET:
+						Event::readSocket(*client, change_list);
+						Event::checkMethod(*client, change_list);
 						break;
 					case READ_FILE: 
-						client->handleFileRead();
-						changeEvents(client->getFileFd(), EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-						close(client->getFileFd());
-						changeEvents(client->getSocketFd(), EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+						Event::readFile(*client, change_list);
 						break;
 					case DISCONNECT:
-						disconnectClient(client->getSocketFd());
+						disconnectClient(client->socket_fd);
 						break;
 					}
 				}
@@ -171,14 +161,13 @@ void	Kqueue::startServer()
 				if (isClient(curr_event->ident))
 				{
 					Client *client = getClient(curr_event->ident);
-					switch (client->getStatus())
+					switch ((int)client->status)
 					{
-					case SEND_RESPONSE:
-						client->handleSocketWrite();
+					case WRITE_SOCKET:
+						Event::writeSocket(*client, change_list);
 						break;
 					case DISCONNECT:
-						changeEvents(client->getSocketFd(), EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-						disconnectClient(client->getSocketFd());
+						disconnectClient(client->socket_fd);
 						break;
 					}
 				}

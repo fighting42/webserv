@@ -1,9 +1,6 @@
 #ifndef KQUEUE_HPP
 #define KQUEUE_HPP
 
-#define RESET   "\033[0m"
-#define GREEN   "\033[32m"
-
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -16,6 +13,9 @@
 #include <sys/time.h>
 #include <sys/event.h>
 
+#define RESET   "\033[0m"
+#define GREEN   "\033[32m"
+
 class Config;
 class Client;
 class Server;
@@ -25,7 +25,6 @@ class Kqueue
   private :
     int kq;
     std::vector<struct kevent> change_list;
-    struct kevent event_list[8];
 
     std::vector<int> v_server;
     std::vector<Client *> v_client;
@@ -37,8 +36,6 @@ class Kqueue
     ~Kqueue();
     void initServer(Config& config);
     void startServer();
-    void changeEvents(uintptr_t ident, int16_t filter, \
-      uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
     void connectClient(int server_fd);
     void disconnectClient(int client_fd);
 
