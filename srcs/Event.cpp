@@ -159,12 +159,21 @@ void    Event::handleCgi(Client& client, std::vector<struct kevent>& change_list
 void    Event::handleError(Client& client, std::vector<struct kevent>& change_list, const std::string &error_code)
 {
 	std::cout << "handleError()" << std::endl;
-	(void)client; (void)change_list; (void)error_code; 
-	// handleGet()이랑 비슷. server, config에서 error_page 찾아서 open()
-	// server block의 error_page 우선 적용, 없으면 location, 그것도 없으면 default
 
-	// std::cout << server->findValue(m_location, "error_page")[0] << std::endl;
-	std::string error_page = "resources/error.html";
+	// findErrorPage(), findLocationErrorPage() 인자로 에러 코드 넣어주면 해당 에러 페이지 값 리턴!
+	// findErrorPage()는 server 블록에서 찾는거, findLocationErrorPage()는 location 블록에서 찾는거!
+	// 두 함수 모두 해당하는 에러페이지 없으면 default 에러페이지 저장!
+	std::string error_page;
+	if ((error_page = client.server->findErrorPage(error_code)) == "")
+	{
+		if ((error_page = client.server->findLocationErrorPage(client.request.getUri(), error_code)) == "")
+			error_page = "resources/error.html"; // default error page
+		else
+		{
+			// handleGet()처럼 location root랑 error_page 합쳐서 경로 만들기!
+		}
+	}
+	// access 등 예외처리 추가!
 	client.file_fd = open(error_page.c_str(), O_RDONLY);
 
 	//response.setContentType_지우지말아주십셩,,희희,,

@@ -27,7 +27,7 @@ class Config
 		void	parseConfig(std::string path);
 		void	parseToken();
 		void	parseServer();
-		void	insertToken(std::map<std::string, std::string>& map, size_t& i);
+		void	insertToken(std::map<std::string, std::string>& map, std::map<std::string, std::string>& map_ep, size_t& i);
 		void	checkToken(std::string str, std::string token);
 		void	removeCommentSpace();
 		void	checkConfig();

@@ -34,16 +34,31 @@ void	Config::checkToken(std::string str, std::string token)
 		throw "config file error";
 }
 
-void	Config::insertToken(std::map<std::string, std::string>& map, size_t& i)
+void	Config::insertToken(std::map<std::string, std::string>& map, std::map<std::string, std::string>& map_ep, size_t& i)
 {
 	std::string directive = v_tokens[i++];
 	if (directive.find(';') != std::string::npos)
 		throw "config file error";
 
+	int cnt = 0;
 	while (v_tokens[i].find(';') == std::string::npos)
-		map.insert(std::pair<std::string, std::string>(v_tokens[i++], directive));
+	{
+		if (directive != "error_page")
+			map.insert(std::pair<std::string, std::string>(v_tokens[i], directive));
+		else
+			cnt++;
+		i++;
+	}
 	v_tokens[i] = v_tokens[i].substr(0, v_tokens[i].size() - 1);
-	map.insert(std::pair<std::string, std::string>(v_tokens[i], directive));
+	if (directive != "error_page")
+		map.insert(std::pair<std::string, std::string>(v_tokens[i], directive));
+	else
+	{
+		if (cnt++ == 0)
+			throw "config file error";
+		while (--cnt > 0)
+			map_ep.insert(std::pair<std::string, std::string>(v_tokens[i - cnt], v_tokens[i]));
+	}
 }
 
 void	Config::parseServer()
@@ -56,6 +71,8 @@ void	Config::parseServer()
 		Server *server = new Server;
 		std::map<std::string, std::string> m_server;
 		std::map< std::string, std::map<std::string, std::string> > m_location;
+		std::map< std::string, std::map<std::string, std::string> > m_error_page;
+		std::map<std::string, std::string> error_page;
 		while (v_tokens[++i] != "}")
 		{
 			if (v_tokens[i] == "location")
@@ -64,10 +81,12 @@ void	Config::parseServer()
 				checkToken("{", v_tokens[++i]);
 
 				std::map<std::string, std::string> location;
+				std::map<std::string, std::string> location_error_page;
 				while (v_tokens[++i] != "}")
-					insertToken(location, i);
+					insertToken(location, location_error_page, i);
 
 				m_location.insert(std::pair< std::string, std::map<std::string, std::string> >(uri, location));
+				m_error_page.insert(std::pair< std::string, std::map<std::string, std::string> >(uri, location_error_page));
 			}
 			else
 			{
@@ -75,12 +94,13 @@ void	Config::parseServer()
 					server->setPort(v_tokens[i + 1]);
 				else if (v_tokens[i] == "server_name")
 					server->setName(v_tokens[i + 1]);
-
-				insertToken(m_server, i);
+				insertToken(m_server, error_page, i);
 			}
 		}
+		m_error_page.insert(std::pair< std::string, std::map<std::string, std::string> >("", error_page));
 		server->setServer(m_server);
 		server->setLocation(m_location);
+		server->setErrorPage(m_error_page);
 		v_server.push_back(server);
 	}
 }
@@ -119,10 +139,10 @@ void	Config::checkConfig()
 {
 	for (std::vector<Server *>::iterator it = v_server.begin(); it != v_server.end(); ++it)
 	{
-		if ((*it)->getName() == "" || (*it)->getPort() < 0 || \
-			(*it)->getServer().size() == 0 || (*it)->getLocation().size() == 0)
+		if ((*it)->getPort() < 0 || (*it)->getServer().size() == 0 || (*it)->getLocation().size() == 0)
 			throw "config file error";
 	}
+	// name:port 겹치는지 확인?
 }
 
 void	Config::parseConfig(std::string path)
