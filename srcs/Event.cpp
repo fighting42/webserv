@@ -169,6 +169,7 @@ void    Event::handleCgi(Client& client, std::vector<struct kevent>& change_list
 void    Event::handleError(Client& client, std::vector<struct kevent>& change_list, const std::string &error_code)
 {
 	std::cout << "handleError()" << std::endl;
+	client.response.setStatus(error_code);
 
 	// findErrorPage(), findLocationErrorPage() 인자로 에러 코드 넣어주면 해당 에러 페이지 값 리턴!
 	// findErrorPage()는 server 블록에서 찾는거, findLocationErrorPage()는 location 블록에서 찾는거!
@@ -181,12 +182,21 @@ void    Event::handleError(Client& client, std::vector<struct kevent>& change_li
 		else
 		{
 			// handleGet()처럼 location root랑 error_page 합쳐서 경로 만들기!
+            std::vector<std::string> v_root = client.server->findValue(client.m_location, "root");
+            std::string root = v_root.back();
+            std::string rsrcs = root + error_page;
+            std::string file = rsrcs;
+            error_page = file;
 		}
 	}
 	// access 등 예외처리 추가!
 	client.file_fd = open(error_page.c_str(), O_RDONLY);
+	if (client.file_fd == -1) {
+        client.status = DISCONNECT;
+        return;
+    }
 
-	//response.setContentType_지우지말아주십셩,,희희,,
+	client.response.setContentType(error_page);
 	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	client.status = READ_FILE;
 }
