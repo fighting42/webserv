@@ -93,17 +93,22 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 	std::vector<std::string> v_root = client.server->findValue(client.m_location, "root");
 	std::string root = v_root.back();
 	std::string rsrcs = root + client.request.getUri();
+	std::string file = rsrcs;
+	if (rsrcs[rsrcs.find("resources") + 10] == '\0')
+	{
+		std::vector<std::string> v_idx = client.server->findValue(client.m_location, "index");
+		std::string idx = rsrcs + v_idx.back();
+		file = idx;
+	}
 	//index 파일 오픈
-	std::vector<std::string> v_idx = client.server->findValue(client.m_location, "index");
-	std::string idx = rsrcs + v_idx.back();
-	if (access(idx.c_str(), F_OK) == -1)
+	if (access(file.c_str(), F_OK) == -1)
 	{
 		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		close(client.file_fd);
 		handleError(client, change_list, "404");
 		return;
 	}
-	client.file_fd = open(idx.c_str(), O_RDONLY);
+	client.file_fd = open(file.c_str(), O_RDONLY);
 	if (client.file_fd == -1)
 	{
 		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
@@ -112,9 +117,14 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 		return;
 	}
 	//파일 내용 저장
-	std::ifstream fout(idx.c_str());
+	std::ifstream fout(file.c_str());
 	if (!fout.is_open())
-		return ; // error status code ???
+	{
+		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		close(client.file_fd);
+		handleError(client, change_list, "500");
+		return;
+	}
 	client.body = std::string((std::istreambuf_iterator<char>(fout)), std::istreambuf_iterator<char>());
 	//response.setContentType_지우지말아주십셩,,희희,,
 	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);

@@ -74,8 +74,8 @@ void Request::ReqParsing(std::string msg)
         this->status = "405";
     this->uri = firstline[1];
     this->version = firstline[2];
-    if (this->version != "http/1.1")
-        this->status = "404";
+    // if (this->version != "1.1")
+    //     this->status = "404";
     std::size_t found_tmp;
     std::string line;
     std::vector<std::string> vline;
