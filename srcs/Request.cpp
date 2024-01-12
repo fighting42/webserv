@@ -8,6 +8,7 @@ const std::string &Request::getMethod() const { return this->method; }
 const std::string &Request::getUri() const { return this->uri; }
 const std::string &Request::getHost() const { return this->host; }
 const std::string &Request::getStatus() const { return this->status; }
+const std::map<std::string, std::string> &Request::getHeaders() const { return this->headers; }
 
 Request::~Request(){}
 
@@ -74,7 +75,7 @@ void Request::ReqParsing(std::string msg)
         this->status = "405";
     this->uri = firstline[1];
     this->version = firstline[2];
-    // if (this->version != "1.1")
+    // if (this->uri != "HTTP/1.1")
     //     this->status = "404";
     std::size_t found_tmp;
     std::string line;
