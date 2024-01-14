@@ -88,10 +88,10 @@ void	Event::readPipe(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "readPipe()" << std::endl;
 
+	waitpid(client.pid, NULL, 0);
 	char buf[1024];
 	client.body_length = read(client.pipe_fd[0], buf, 1024);
 	buf[client.body_length] = '\0';
-	// std::cout << buf << std::endl;
 	client.body = buf;
 	client.response.getBody(buf, client.body_length);
 	client.response.makeResponse();
@@ -107,6 +107,7 @@ void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
 	std::cout << "writePipe()" << std::endl;
 
 	// std::string body = client.request.getBody();
+	// body = body.substr(3); // 개행 제거
 	// write(client.pipe_fd[1], body.c_str(), body.length());
 	close(client.pipe_fd[1]);
 	changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);

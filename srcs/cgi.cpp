@@ -53,10 +53,10 @@ void	Event::execCgi(Client& client)
 	if (pipe(fds1) == -1 || pipe(fds2) == -1)
 		return ; // error
 
-	int pid = fork();
-	if (pid < 0)
+	client.pid = fork();
+	if (client.pid < 0)
 		return ; // error
-	else if (pid == 0) // 자식
+	else if (client.pid == 0) // 자식
 	{
 		dup2(fds1[0], STDIN_FILENO); // fds1[0] 입력
 		dup2(fds2[1], STDOUT_FILENO); // fds2[1] 출력

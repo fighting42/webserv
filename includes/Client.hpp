@@ -29,6 +29,7 @@ class Client
         int socket_fd;
         int file_fd;
         int pipe_fd[2];
+        int pid;
         std::string ip;
         Status status;
         Request request;
