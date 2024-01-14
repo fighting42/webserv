@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 #include <sys/event.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #define RESET   "\033[0m"
 #define BLUE    "\033[34m"
@@ -22,17 +24,14 @@ class Event
 		static void changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, \
 			int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
 
-		static void	findLocation(Client& client);
 		static void	checkMethod(Client& client, std::vector<struct kevent>& change_list);
 		
 		static void	readSocket(Client& client, std::vector<struct kevent>& change_list);
-		// 구 handleSocketRead
-		
 		static void	writeSocket(Client& client, std::vector<struct kevent>& change_list);
-		// 구 handleSocketWrite
-		
 		static void	readFile(Client& client, std::vector<struct kevent>& change_list);
-		// 구 handleFileRead
+		static void	readPipe(Client& client, std::vector<struct kevent>& change_list);
+		static void	writePipe(Client& client, std::vector<struct kevent>& change_list);
+		static void execCgi(Client& client);
 
 		static void	handleGet(Client& client, std::vector<struct kevent>& change_list);
 		static void	handleDelete(Client& client, std::vector<struct kevent>& change_list);

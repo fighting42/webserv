@@ -11,10 +11,12 @@
 
 enum Status // 다음에 할 작업으로 status 바꿔주는겁니다요
 {
-	READ_SOCKET, // 구 RECV_REQUEST
+	READ_SOCKET,
+	WRITE_SOCKET,
 	READ_FILE,
     WRITE_FILE,
-	WRITE_SOCKET, // 구 SEND_RESPONSE
+    READ_PIPE,
+    WRITE_PIPE,
 	DISCONNECT
 }; 
 
@@ -26,6 +28,8 @@ class Client
     public:
         int socket_fd;
         int file_fd;
+        int pipe_fd[2];
+        std::string ip;
         Status status;
         Request request;
         Response response;
@@ -37,7 +41,7 @@ class Client
         Server *server;
         std::map<std::string, std::string> m_location;
 
-        Client(int client_socket);
+        Client(int client_socket, std::string client_ip);
         ~Client();
 };
 

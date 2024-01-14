@@ -10,21 +10,19 @@ void Event::changeEvents(std::vector<struct kevent>& change_list, uintptr_t iden
 	change_list.push_back(temp_event);
 }
 
-void    Event::findLocation(Client& client)
-{
-	client.m_location = client.server->getLocation()[client.request.getUri()];
-	if (client.m_location.size() == 0)
-		client.m_location = client.server->getLocation()["/"];
-}
-
 void    Event::checkMethod(Client& client, std::vector<struct kevent>& change_list)
 {
 	if (client.status != READ_SOCKET)
 		return;
 
-	findLocation(client);
-	// handleCgi(client, change_list);
-	if (client.request.getMethod() == "GET")
+	client.m_location = client.server->getLocation()[client.request.getUri()];
+	if (client.m_location.size() == 0)
+		client.m_location = client.server->getLocation()["/"];
+	// allow_method(405), client_max_body_size(413) 확인하기
+
+	if (client.server->findValue(client.m_location, "cgi_pass").size() > 0)
+		handleCgi(client, change_list);
+	else if (client.request.getMethod() == "GET")
 		handleGet(client, change_list);
 	else if (client.request.getMethod() == "DELETE")
 		handleDelete(client, change_list);
@@ -41,7 +39,7 @@ void Event::readSocket(Client& client, std::vector<struct kevent>& change_list)
 	buf[client.body_length] = '\0';
 	client.request.ReqParsing(buf);
 	changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-	if (client.request.getStatus() != "200") // 다 404 리턴중임당ㅎㅎ..ㅎ..ㅎ.ㅎㅎ
+	if (client.request.getStatus() != "200")
 		handleError(client, change_list, client.request.getStatus());
 
 	std::cout << BLUE << "[request message]" << std::endl << buf << RESET << std::endl;
@@ -84,6 +82,36 @@ void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	client.status = WRITE_SOCKET;
+}
+
+void	Event::readPipe(Client& client, std::vector<struct kevent>& change_list)
+{
+	std::cout << "readPipe()" << std::endl;
+
+	char buf[1024];
+	client.body_length = read(client.pipe_fd[0], buf, 1024);
+	buf[client.body_length] = '\0';
+	// std::cout << buf << std::endl;
+	client.body = buf;
+	client.response.getBody(buf, client.body_length);
+	client.response.makeResponse();
+	
+	close(client.pipe_fd[0]);
+	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	client.status = WRITE_SOCKET;
+}
+
+void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
+{
+	std::cout << "writePipe()" << std::endl;
+
+	// std::string body = client.request.getBody();
+	// write(client.pipe_fd[1], body.c_str(), body.length());
+	close(client.pipe_fd[1]);
+	changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	client.status = READ_PIPE;
 }
 
 void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) //디폴트 파일 말고 경로 들어왔을 때 열리도록 추가
@@ -163,7 +191,11 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 void    Event::handleCgi(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "handleCgi()" << std::endl;
-	(void)client; (void)change_list;
+	execCgi(client);
+	fcntl(client.pipe_fd[0], F_SETFL, O_NONBLOCK);
+	fcntl(client.pipe_fd[1], F_SETFL, O_NONBLOCK);
+	changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	client.status = WRITE_PIPE;
 }
 
 void    Event::handleError(Client& client, std::vector<struct kevent>& change_list, const std::string &error_code)
@@ -171,17 +203,13 @@ void    Event::handleError(Client& client, std::vector<struct kevent>& change_li
 	std::cout << "handleError()" << std::endl;
 	client.response.setStatus(error_code);
 
-	// findErrorPage(), findLocationErrorPage() 인자로 에러 코드 넣어주면 해당 에러 페이지 값 리턴!
-	// findErrorPage()는 server 블록에서 찾는거, findLocationErrorPage()는 location 블록에서 찾는거!
-	// 두 함수 모두 해당하는 에러페이지 없으면 default 에러페이지 저장!
 	std::string error_page;
 	if ((error_page = client.server->findErrorPage(error_code)) == "")
 	{
 		if ((error_page = client.server->findLocationErrorPage(client.request.getUri(), error_code)) == "")
-			error_page = "resources/error.html"; // default error page
+			error_page = "resources/error.html";
 		else
 		{
-			// handleGet()처럼 location root랑 error_page 합쳐서 경로 만들기!
             std::vector<std::string> v_root = client.server->findValue(client.m_location, "root");
             std::string root = v_root.back();
             std::string rsrcs = root + error_page;

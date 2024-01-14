@@ -43,29 +43,38 @@ void	Kqueue::initServer(Config &config)
 void Kqueue::disconnectClient(int client_fd)
 {
 	Event::changeEvents(change_list, client_fd, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+	std::string client_ip;
 	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
 	{
 		if ((*it)->socket_fd == client_fd)
 		{
+			client_ip = (*it)->ip;
 			v_client.erase(it);
 			delete *it;
 			break;
 		}
 	}
 	close(client_fd);
-	std::cout << "[disconnect client] " << client_fd << std::endl;
+	std::cout << "[disconnect client] " << client_ip << std::endl;
 }
 
 void Kqueue::connectClient(int server_fd)
 {
 	int client_socket;
-	if ((client_socket = accept(server_fd, NULL, NULL)) == -1)
+	struct sockaddr_in client_addr;
+	socklen_t addr_len = sizeof(client_addr);
+
+	if ((client_socket = accept(server_fd, (struct sockaddr*)&client_addr, &addr_len)) == -1)
 		throw "accept() error";
 	fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
+	char client_ip[INET_ADDRSTRLEN];
+	if (inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof(client_ip)) == NULL)
+		throw "inet_ntop() error";
+
 	Event::changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	
-	Client *client = new Client(client_socket);
+	Client *client = new Client(client_socket, client_ip);
 	for (std::vector<Server *>::iterator it = v_config.begin(); it != v_config.end(); ++it)
 	{
 		if ((*it)->getSocketFd() == server_fd)
@@ -75,7 +84,7 @@ void Kqueue::connectClient(int server_fd)
 		}
 	}
 	v_client.push_back(client);
-	std::cout << "[connect new client] " << client_socket << std::endl;
+	std::cout << "[connect new client] " << client_ip << std::endl;
 }
 
 bool Kqueue::isServer(int fd)
@@ -94,6 +103,8 @@ bool Kqueue::isClient(int fd)
 			return true;
 		else if ((*it)->file_fd == fd)
 			return true;
+		else if ((*it)->pipe_fd[0] == fd || (*it)->pipe_fd[1] == fd)
+			return true;
 	}
 	return false;
 }
@@ -106,6 +117,8 @@ Client* Kqueue::getClient(int fd)
 		if ((*it)->socket_fd == fd)
 			break;
 		else if ((*it)->file_fd == fd)
+			break;
+		else if ((*it)->pipe_fd[0] == fd || (*it)->pipe_fd[1] == fd)
 			break;
 	}
 	return *it;
@@ -150,6 +163,9 @@ void	Kqueue::startServer()
 					case READ_FILE: 
 						Event::readFile(*client, change_list);
 						break;
+					case READ_PIPE:
+						Event::readPipe(*client, change_list);
+						break;
 					case DISCONNECT:
 						disconnectClient(client->socket_fd);
 						break;
@@ -165,6 +181,9 @@ void	Kqueue::startServer()
 					{
 					case WRITE_SOCKET:
 						Event::writeSocket(*client, change_list);
+						break;
+					case WRITE_PIPE:
+						Event::writePipe(*client, change_list);
 						break;
 					case DISCONNECT:
 						disconnectClient(client->socket_fd);
