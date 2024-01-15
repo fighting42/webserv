@@ -10,26 +10,6 @@ void Event::changeEvents(std::vector<struct kevent>& change_list, uintptr_t iden
 	change_list.push_back(temp_event);
 }
 
-void    Event::checkMethod(Client& client, std::vector<struct kevent>& change_list)
-{
-	if (client.status != RECV_REQUEST)
-		return;
-
-	client.m_location = client.server->getLocation()[client.request.getUri()];
-	if (client.m_location.size() == 0)
-		client.m_location = client.server->getLocation()["/"];
-	// allow_method(405), client_max_body_size(413) 확인하기
-
-	if (client.server->findValue(client.m_location, "cgi_pass").size() > 0)
-		handleCgi(client, change_list);
-	else if (client.request.getMethod() == "GET")
-		handleGet(client, change_list);
-	else if (client.request.getMethod() == "DELETE")
-		handleDelete(client, change_list);
-	else if (client.request.getMethod() == "POST")
-		handlePost(client, change_list);
-}
-
 void Event::readSocket(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "readSocket()" << std::endl;
