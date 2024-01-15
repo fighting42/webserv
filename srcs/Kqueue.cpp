@@ -156,7 +156,7 @@ void	Kqueue::startServer()
 					Client *client = getClient(curr_event->ident);
 					switch ((int)client->status)
 					{
-					case READ_SOCKET:
+					case RECV_REQUEST:
 						Event::readSocket(*client, change_list);
 						Event::checkMethod(*client, change_list);
 						break;
@@ -179,7 +179,7 @@ void	Kqueue::startServer()
 					Client *client = getClient(curr_event->ident);
 					switch ((int)client->status)
 					{
-					case WRITE_SOCKET:
+					case SEND_RESPONSE:
 						Event::writeSocket(*client, change_list);
 						break;
 					case WRITE_PIPE:

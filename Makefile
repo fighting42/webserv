@@ -8,6 +8,7 @@ SRCS		=	srcs/main.cpp \
 				srcs/Config.cpp \
 				srcs/Event.cpp \
 				srcs/Kqueue.cpp \
+				srcs/method.cpp \
 				srcs/Request.cpp \
 				srcs/Response.cpp \
 				srcs/Server.cpp \

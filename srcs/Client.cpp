@@ -11,7 +11,7 @@ Client::Client(int client_socket, std::string client_ip)
 	pipe_fd[0] = -1;
 	pipe_fd[1] = -1;
 	ip = client_ip;
-	status = READ_SOCKET;
+	status = RECV_REQUEST;
 	written = 0;
 }
 

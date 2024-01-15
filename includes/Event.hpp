@@ -29,6 +29,7 @@ class Event
 		static void	readSocket(Client& client, std::vector<struct kevent>& change_list);
 		static void	writeSocket(Client& client, std::vector<struct kevent>& change_list);
 		static void	readFile(Client& client, std::vector<struct kevent>& change_list);
+		static void writeFile(Client& client, std::vector<struct kevent>& change_list);
 		static void	readPipe(Client& client, std::vector<struct kevent>& change_list);
 		static void	writePipe(Client& client, std::vector<struct kevent>& change_list);
 		static void execCgi(Client& client);
