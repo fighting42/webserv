@@ -4,13 +4,17 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 #include <sys/event.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <ctime>
 
 #define RESET   "\033[0m"
 #define BLUE    "\033[34m"
 #define CYAN    "\033[36m"
+
+extern std::map<std::string, std::string> m_mime_type;
 
 class Client;
 
@@ -20,6 +24,7 @@ class Event
 		Event();
 
 	public:
+		static void setMimeType();
 
 		static void changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, \
 			int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata);

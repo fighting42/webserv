@@ -27,7 +27,7 @@ char** setEnvp(Client& client)
 	std::string method = client.request.getMethod();
 	v_env.push_back("REQUEST_METHOD=" + method);
 	if (method == "GET")
-		v_env.push_back("QUERY_STRING="); // ? 뒤 값
+		v_env.push_back("QUERY_STRING="); // getQuerystr()
 	else if (method == "POST")
 	{
 		// v_env.push_back("CONTENT_LENGTH=" + m_headers["Content-Length"]);

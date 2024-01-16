@@ -12,6 +12,7 @@ void	Kqueue::initServer(Config &config)
 	if ((kq = kqueue()) == -1)
 		throw "kqueue() error";
 
+	Event::setMimeType();
 	v_config = config.getServer();
 	for (std::vector<Server *>::iterator it = v_config.begin(); it != v_config.end(); ++it)
 	{
@@ -181,6 +182,9 @@ void	Kqueue::startServer()
 					{
 					case SEND_RESPONSE:
 						Event::writeSocket(*client, change_list);
+						break;
+					case WRITE_FILE:
+						Event::writeFile(*client, change_list);
 						break;
 					case WRITE_PIPE:
 						Event::writePipe(*client, change_list);

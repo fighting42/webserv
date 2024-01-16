@@ -89,10 +89,23 @@ void    Event::handleDelete(Client& client, std::vector<struct kevent>& change_l
 void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "handlePost()" << std::endl;
-	(void)client; (void)change_list;
-	// 날짜시간으로 파일 생성, file_fd open (post)
-	// 파일에 body 내용 쓰기 (write file)
-	// 응답보내기 (write socket)
+	
+	time_t now = time(0);
+	struct tm* tm = localtime(&now);
+	char buf[80];
+	strftime(buf, sizeof(buf), "%Y%m%d %H:%M:%S", tm);
+	std::string filename = buf; // 현재날짜시간 + 실제 파일 이름 있으면 추가
+	std::map<std::string, std::string> m_headers = client.request.getHeaders();
+	std::string extension = m_mime_type[m_headers["Content-Type"]]; // m_headers 값 잘 들어있어야됨
+	std::string path = client.server->findValue(client.m_location, "upload_pass")[0] + "/";
+	if (path.empty())
+		path = "resources/upload/"; // default
+	client.file_fd = open((path + filename + extension).c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0777);
+
+	// body가 file이면 업로드 구현 -> .data()
+	// application/x-www-form-urlencoded ??
+
+	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	client.status = WRITE_FILE;
 }
 

@@ -1,6 +1,17 @@
 #include "../includes/Event.hpp"
 #include "../includes/Client.hpp"
 
+std::map<std::string, std::string> m_mime_type;
+
+void Event::setMimeType()
+{
+	m_mime_type.insert(std::pair<std::string, std::string>("text/html", ".html"));
+	m_mime_type.insert(std::pair<std::string, std::string>("text/plain", ".txt"));
+	m_mime_type.insert(std::pair<std::string, std::string>("image/png", ".png"));
+	m_mime_type.insert(std::pair<std::string, std::string>("multipart/form-data", ".binary"));
+	m_mime_type.insert(std::pair<std::string, std::string>("application/octet-stream", ""));
+}
+
 void Event::changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, \
 	int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
@@ -18,7 +29,8 @@ void Event::readSocket(Client& client, std::vector<struct kevent>& change_list)
 	client.body_length = read(client.socket_fd, buf, 1024);
 	buf[client.body_length] = '\0';
 	client.request.ReqParsing(buf);
-	changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+	// if (!client.request.getChunked())
+		changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
 	if (client.request.getStatus() != "200")
 		handleError(client, change_list, client.request.getStatus());
 
@@ -67,8 +79,25 @@ void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "writeFile()" << std::endl;
-	(void)client; (void)change_list;
 
+	// 이게 맞나
+	if (client.body_length == 0) // cgi를 거치지 않았을 때
+	{
+		// std::string body = client.request.getBody();
+		// body = body.substr(3); // 개행 제거
+		// client.body = body;
+		// client.body_length = body.length();
+	}
+	write(client.file_fd, client.body.c_str(), client.body_length);
+	char *tmp = new char [client.body_length];
+	strcpy(tmp, client.body.c_str());
+	
+	client.response.getBody(tmp, client.body_length);
+	client.response.makeResponse();
+
+	close(client.file_fd);
+	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	client.status = SEND_RESPONSE;
 }
 
@@ -81,13 +110,18 @@ void	Event::readPipe(Client& client, std::vector<struct kevent>& change_list)
 	client.body_length = read(client.pipe_fd[0], buf, 1024);
 	buf[client.body_length] = '\0';
 	client.body = buf;
-	client.response.getBody(buf, client.body_length);
-	client.response.makeResponse();
-	
+
 	close(client.pipe_fd[0]);
 	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-	client.status = SEND_RESPONSE;
+	if (client.request.getMethod() == "GET")
+	{
+		client.response.getBody(buf, client.body_length);
+		client.response.makeResponse();
+		changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		client.status = SEND_RESPONSE;
+	}
+	else if (client.request.getMethod() == "POST")
+		handlePost(client, change_list);
 }
 
 void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
@@ -95,8 +129,8 @@ void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
 	std::cout << "writePipe()" << std::endl;
 
 	// std::string body = client.request.getBody();
-	body = body.substr(3); // 개행 제거
-	write(client.pipe_fd[1], body.c_str(), body.length());
+	// body = body.substr(3); // 개행 제거
+	// write(client.pipe_fd[1], body.c_str(), body.length());
 	close(client.pipe_fd[1]);
 	changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
