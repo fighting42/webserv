@@ -1,7 +1,7 @@
 #include "../includes/Request.hpp"
 
 Request::Request()
-    :method("default"), uri("default"), version("default"), body("default"), status("200")
+    :method("default"), uri("default"), version("default"), status("200"), chunked(false)
 {}
 
 const std::string &Request::getMethod() const { return this->method; }
@@ -25,7 +25,7 @@ void Request::PrintRequest()
             std::cout << "Content-Length: " << it->second << std::endl;
         break;
     }
-    std::cout << "body: " << this->body << std::endl;
+    // std::cout << "body: " << this->body << std::endl;
     std::cout << "\033[0m" << std::endl; // reset
 }
 
@@ -53,18 +53,41 @@ std::vector<std::string> Request::ReqSplit(std::string input, char delimiter)
     return ret;
 }
 
-std::string Request::removeSpace(std::string str)
+std::string Request::removeWhiteSpace(std::string str)
 {
     std::string tmp;
+    int idx;
 
     tmp = str.substr(2, str.size());
+    for (idx = 0; idx < str.size(); idx++)
+    {
+        if (str[idx] == '\t' || str[idx] == '\n' || str[idx] == '\r' || \
+            str[idx] == '\v' || str[idx] == '\f' || str[idx] == ' ')
+            break ;
+    }
+    tmp = str.substr(0, idx);
     return (tmp);
+}
+
+std::string Request::checkQuery(std::string uri)
+{
+
+}
+
+void Request::controlChunked(std::string msg, int flag)
+{
+
 }
 
 //"0/n" chunked라면 content-length(16진법)가 지금 들어온 바디 size 체크 용으로만 사용하고 마지막 문자 나올 떄까지 받아
 
 void Request::ReqParsing(std::string msg)
 {
+    if (this->chunked)
+    {
+        controlChunked(msg, 1);
+        return ;
+    }
     this->req_msg = msg;
     std::size_t found = this->req_msg.find("\n");
     std::string first = this->req_msg.substr(0, found);
@@ -74,9 +97,9 @@ void Request::ReqParsing(std::string msg)
     if (this->method != "GET" && this->method != "POST" && this->method != "DELETE")
         this->status = "405";
     this->uri = firstline[1];
+    if (this->uri != "HTTP/1.1")
+        this->status = "404";
     this->version = firstline[2];
-    // if (this->uri != "HTTP/1.1")
-    //     this->status = "404";
     std::size_t found_tmp;
     std::string line;
     std::vector<std::string> vline;
@@ -89,15 +112,21 @@ void Request::ReqParsing(std::string msg)
         vline = ReqSplit(line, ':'); 
         if (vline == static_cast< std::vector<std::string> > (0))
             break ;
-        vline[1] = removeSpace(vline[1]);
+        vline[1] = removeWhiteSpace(vline[1]);
         this->headers.insert(std::make_pair(vline[0], vline[1]));
         // std::cout << "헤더 종류(" << vline[0] << "), 헤더 내용(" << vline[1] << ")" << std::endl;
         if (vline[0] == "Host")
             this->host = vline[1];
+        if (vline[0] == "Content-Length")
+            this->content_length = static_cast<size_t>(atoi(vline[1].c_str()));
+        if (vline[0] == "Transfer-Encoding" && vline[1] == "chunked")
+            this->chunked = true;
         found = found_tmp;
     }
-    if (found != this->req_msg.size() && found < this->req_msg.size())
-        this->body = this->req_msg.substr(found, this->req_msg.size());
+    if (this->chunked)
+        controlChunked(msg, 0);
+    // if (found != this->req_msg.size() && found < this->req_msg.size())
+        // this->body = this->req_msg.substr(found, this->req_msg.size());
 }
 
 // int main() //파싱 테스트

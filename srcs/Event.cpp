@@ -94,7 +94,7 @@ void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "writePipe()" << std::endl;
 
-	std::string body = client.request.getBody();
+	// std::string body = client.request.getBody();
 	body = body.substr(3); // 개행 제거
 	write(client.pipe_fd[1], body.c_str(), body.length());
 	close(client.pipe_fd[1]);

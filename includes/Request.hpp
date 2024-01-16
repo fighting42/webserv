@@ -16,8 +16,13 @@ class Request
 		std::string version;
     std::string host;
 		std::map<std::string, std::string> headers;
-		std::string body;
     std::string status;
+    // std::vector<char> buffer;
+	  size_t content_length;
+	  std::vector<char> body;
+	  size_t body_size;
+    std::string query_str;
+    bool chunked;
     
   public:
     Request();
@@ -30,7 +35,9 @@ class Request
     void PrintRequest();
     void ReqParsing(std::string msg);
     std::vector<std::string> ReqSplit(std::string input, char delimiter);
-    std::string removeSpace(std::string str);
+    std::string removeWhiteSpace(std::string str);
+    std::string checkQuery(std::string uri);
+    void controlChunked(std::string msg, int flag);
 };
 
 #endif
