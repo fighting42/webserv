@@ -20,7 +20,7 @@ class Request
     // std::vector<char> buffer;
 	  size_t content_length;
 	  std::vector<char> body;
-	  size_t body_size;
+	  // size_t body_size;
     std::string query_str;
     bool chunked;
     
