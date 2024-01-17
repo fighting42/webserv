@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <ctime>
+#include <dirent.h>
 
 #define RESET   "\033[0m"
 #define BLUE    "\033[34m"
@@ -47,6 +48,7 @@ class Event
 		static void	handlePost(Client& client, std::vector<struct kevent>& change_list);
 		static void	handleCgi(Client& client, std::vector<struct kevent>& change_list);
 		static void	handleError(Client& client, std::vector<struct kevent>& change_list, const std::string &error_code);
+		static void handleAutoindex(Client& client, std::vector<struct kevent>& change_list, std::string uri);
 };
 
 #endif

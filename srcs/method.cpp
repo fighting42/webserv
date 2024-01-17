@@ -35,7 +35,14 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 		std::string idx = rsrcs + v_idx.back();
 		file = idx;
 	}
+	std::vector<std::string> v_autoindex = client.server->findValue(client.m_location, "autoindex");
+	if (!v_autoindex.empty() && v_autoindex[0] == "on")
+	{
+		handleAutoindex(client, change_list, rsrcs);
+		return;
+	}
 
+	
 	//index 파일 오픈
 	if (access(file.c_str(), F_OK) == -1)
 	{
@@ -156,4 +163,43 @@ void    Event::handleError(Client& client, std::vector<struct kevent>& change_li
 	client.response.setContentType(error_page);
 	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = READ_FILE;
+}
+
+void Event::handleAutoindex(Client& client, std::vector<struct kevent>& change_list, std::string uri) 
+{
+	// html 코드 생성
+	std::string autoindex_html = "<html><head><meta charset=\"UTF-8\"></head>" \
+    "<style>body { background-color: white; font-family: Trebuchet MS;}</style>" \
+	"<body><h1>" + uri + " List</h1><ul>";
+	autoindex_html += "<table>";
+	// 목록 채우기
+	struct dirent* entry;
+	DIR* dp = opendir(uri.c_str());
+	if (dp != NULL) 
+	{
+		size_t resources_pos = uri.find("resources/");
+		if (resources_pos != std::string::npos) 
+		uri = uri.substr(resources_pos + std::string("resources/").length());
+		while ((entry = readdir(dp))) 
+		{
+			std::string entry_name = entry->d_name;
+            std::string entry_path = entry_name;
+            std::string entry_link = "<a href='" + entry_path + "'>" + entry_name + "</a>";
+            // 만약 폴더라면 하이퍼링크 걸어주기
+            if (entry->d_type == DT_DIR)
+			{
+				entry_path = uri + "/" + entry_name;
+            	autoindex_html += "<tr><td><a href='" + entry_path + "'>" + entry_name + "</a>" + "</td></tr>";
+            }
+			else
+				autoindex_html += "<tr><td>" + entry_name + "</td></tr>";
+		}
+		closedir(dp);
+	}
+	autoindex_html += "</table></ul></body></html>";
+	// 응답 body에 써주기
+	client.response.setBody(std::vector<char>(autoindex_html.begin(), autoindex_html.end()));
+	client.response.makeResponse();
+	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
+	client.status = SEND_RESPONSE;
 }
