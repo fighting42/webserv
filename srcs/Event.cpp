@@ -14,6 +14,17 @@ void Event::setMimeType()
 	m_mime_type.insert(std::pair<std::string, std::string>("application/octet-stream", ""));
 }
 
+std::string Event::getMimeType(std::string extension)
+{
+	for (std::map<std::string, std::string>::iterator it = m_mime_type.begin(); \
+		it != m_mime_type.end(); ++it)
+	{
+		if (it->second == extension)
+			return it->first;
+	}
+	return "";
+}
+
 void Event::changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, \
 	int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
