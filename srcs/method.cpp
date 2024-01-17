@@ -35,6 +35,7 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 		std::string idx = rsrcs + v_idx.back();
 		file = idx;
 	}
+
 	//index 파일 오픈
 	if (access(file.c_str(), F_OK) == -1)
 	{
@@ -83,6 +84,12 @@ void    Event::handleDelete(Client& client, std::vector<struct kevent>& change_l
 		handleError(client, change_list, "500");
 		return;
 	}
+
+	char str[17] = "DELETE SUCCESS!\n";
+	client.response.getBody(str, strlen(str));
+	client.response.makeResponse();
+	
+	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = SEND_RESPONSE;
 }
 
