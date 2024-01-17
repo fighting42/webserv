@@ -59,13 +59,13 @@ std::string Request::removeWhiteSpace(std::string str)
     size_t idx;
 
     tmp = str.substr(2, str.size());
-    for (idx = 0; idx < str.size(); idx++)
+    for (idx = 0; idx < tmp.size(); idx++)
     {
-        if (str[idx] == '\t' || str[idx] == '\n' || str[idx] == '\r' || \
-            str[idx] == '\v' || str[idx] == '\f' || str[idx] == ' ')
+        if (tmp[idx] == '\t' || tmp[idx] == '\n' || tmp[idx] == '\r' || \
+            tmp[idx] == '\v' || tmp[idx] == '\f' || tmp[idx] == ' ')
             break ;
     }
-    tmp = str.substr(0, idx);
+    tmp = tmp.substr(0, idx);
     return (tmp);
 }
 
@@ -78,7 +78,7 @@ std::string Request::checkQuery(std::string uri)
             break ;
     }
     if (idx == uri.size())
-        return uri;
+        return (uri);
     else
     {
         std::string q_str;
@@ -86,7 +86,7 @@ std::string Request::checkQuery(std::string uri)
         u_str = uri.substr(0, idx);
         q_str = uri.substr(idx+1, uri.size()-idx-1);
         this->query_str = q_str;
-        return u_str;
+        return (u_str);
     }
 }
 
@@ -124,8 +124,8 @@ void Request::ReqParsing(std::string msg)
     if (this->method != "GET" && this->method != "POST" && this->method != "DELETE")
         this->status = "405";
     this->uri = checkQuery(firstline[1]);
-    if (this->uri != "HTTP/1.1")
-        this->status = "404";
+    // if (this->uri != "HTTP/1.1")
+    //     this->status = "404";
     this->version = firstline[2];
     std::size_t found_tmp;
     std::string line;
@@ -158,11 +158,11 @@ void Request::ReqParsing(std::string msg)
     }
 }
 
-// int main() //파싱 테스트
+// int main() // 파싱 테스트
 // {
 //     Request Req;
 
-//     std::string msg = "POST HTTP 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhosthost: localhost:8080\nContent-Length: 13\nsay=Hi&to=Mom";
+//     std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nContent-Length: 13\nsay=Hi&to=Mom";
 //     Req.ReqParsing(msg);
 //     Req.PrintRequest();
 //     return (0);
