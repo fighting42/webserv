@@ -9,6 +9,7 @@ const std::string &Request::getUri() const { return this->uri; }
 const std::string &Request::getHost() const { return this->host; }
 const std::string &Request::getStatus() const { return this->status; }
 const bool &Request::getChunked() const { return this->chunked; }
+const std::vector<char> &Request::getBody() const { return this->body; }
 const std::string &Request::getQueryStr() const { return this->query_str; }
 const std::map<std::string, std::string> &Request::getHeaders() const { return this->headers; }
 
