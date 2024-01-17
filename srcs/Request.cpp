@@ -1,13 +1,15 @@
 #include "../includes/Request.hpp"
 
 Request::Request()
-    :method("default"), uri("default"), version("default"), status("200"), chunked(false)
+    :method("default"), uri("default"), version("default"), status("200"), query_str(""), chunked(false)
 {}
 
 const std::string &Request::getMethod() const { return this->method; }
 const std::string &Request::getUri() const { return this->uri; }
 const std::string &Request::getHost() const { return this->host; }
 const std::string &Request::getStatus() const { return this->status; }
+const bool &Request::getChunked() const { return this->chunked; }
+const std::string &Request::getQueryStr() const { return this->query_str; }
 const std::map<std::string, std::string> &Request::getHeaders() const { return this->headers; }
 
 Request::~Request(){}
@@ -25,7 +27,10 @@ void Request::PrintRequest()
             std::cout << "Content-Length: " << it->second << std::endl;
         break;
     }
-    // std::cout << "body: " << this->body << std::endl;
+    std::cout << "body: " << std::endl;
+    for (std::vector<char>::iterator it = this->body.begin(); it != this->body.end(); ++it) {
+        std::cout << *it;
+    }
     std::cout << "\033[0m" << std::endl; // reset
 }
 
@@ -72,15 +77,13 @@ std::string Request::removeWhiteSpace(std::string str)
 std::string Request::checkQuery(std::string uri)
 {
     size_t idx;
-    for (idx = 0; idx < uri.size() ; idx++)
-    {
+    for (idx = 0; idx < uri.size() ; idx++) {
         if (uri[idx] == '?')
             break ;
     }
     if (idx == uri.size())
         return (uri);
-    else
-    {
+    else {
         std::string q_str;
         std::string u_str;
         u_str = uri.substr(0, idx);
@@ -88,6 +91,25 @@ std::string Request::checkQuery(std::string uri)
         this->query_str = q_str;
         return (u_str);
     }
+}
+
+ssize_t Request::hexToDec(const std::string& hex) 
+{
+	ssize_t ret = 0;
+    size_t i;
+
+	for (i = 0; i < hex.size(); i++) {
+		ret *= 16;
+		if (hex[i] >= '0' && hex[i] <= '9')
+			ret += hex[i] - '0'; // '0' ~ '9'까지의 경우
+        else if (hex[i] >= 'a' && hex[i] <= 'f')
+			ret += hex[i] - 'a' + 10; // 'a' ~ 'f'까지의 경우
+        else if (hex[i] >= 'A' && hex[i] <= 'F')
+			ret += hex[i] - 'A' + 10; // 'A' ~ 'F'까지의 경우
+        else
+			return (-1);
+	}
+	return (ret);
 }
 
 void Request::controlChunked(std::string msg, int flag)
@@ -153,8 +175,11 @@ void Request::ReqParsing(std::string msg)
     if (this->chunked)
         controlChunked(msg, 0);
     else {
-        // if (found != this->req_msg.size() && found < this->req_msg.size())
-        //     this->body = this->req_msg.substr(found, this->req_msg.size());
+        if (found != this->req_msg.size() && found < this->req_msg.size()) {
+            std::string buf = this->req_msg.substr(found, this->req_msg.size());
+            for (size_t i = 0; i < buf.size() ; i++)
+                this->body.push_back(buf[i]);
+        }
     }
 }
 

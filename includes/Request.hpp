@@ -31,6 +31,9 @@ class Request
 	  const std::string& getUri() const;
 	  const std::string& getHost() const;
 	  const std::string& getStatus() const;
+    const bool& getChunked() const;
+    const std::string& getQueryStr() const;
+    const std::vector<char>& getBody() const;
 	  const std::map<std::string, std::string>& getHeaders() const;
     void PrintRequest();
     void ReqParsing(std::string msg);
@@ -38,6 +41,7 @@ class Request
     std::string removeWhiteSpace(std::string str);
     std::string checkQuery(std::string uri);
     void controlChunked(std::string msg, int flag);
+    ssize_t hexToDec(const std::string& hex);
 };
 
 #endif
