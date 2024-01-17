@@ -16,12 +16,9 @@ class Response
 		//std::string status_msg;
 		std::map<std::string, std::string> headers;
 		std::vector<char> body;
-		std::map<std::string, std::string> m_mime;
 		// int		 status; // make를 위한 주석입니당 지워도됩니당
 
 		std::vector<char> getStatusMsg() const;
-		std::string getMIMEType(const std::string& file_type);
-		std::map<std::string, std::string> initializeMIMEMap();
 		void makeHeaderLine();
 		std::string getDate(std::time_t* t);
 

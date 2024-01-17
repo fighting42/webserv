@@ -1,4 +1,5 @@
 #include "../includes/Response.hpp"
+#include "../includes/Event.hpp"
 
 Response::Response() : status("200") {}
 
@@ -18,8 +19,8 @@ void Response::setBody(const std::vector<char> &obj) { body = obj; }
 void Response::setStatus(const std::string &obj) { status = obj; }
 
 void Response::setContentType(const std::string &resource) {
-	std::string file_type = resource.substr(resource.find('.') + 1);
-	content_type = getMIMEType(file_type);
+	std::string file_type = resource.substr(resource.find('.'));
+	content_type = Event::getMimeType(file_type);
 }
 
 void Response::print() {
@@ -94,23 +95,6 @@ std::string Response::getDate(std::time_t *t) {
 	std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", timeInfo);
 
 	return buffer;
-}
-
-std::map<std::string, std::string> Response::initializeMIMEMap() {
-	std::map<std::string, std::string> m_mime;
-	m_mime["html"] = "text/html";
-	m_mime["txt"] = "text/plain";
-	m_mime["png"] = "image/png";
-	m_mime["ico"] = "image/x-icon";
-	m_mime["binary"] = "multipart/form-data";
-	return m_mime;  
-}
-
-std::string Response::getMIMEType(const std::string& file_type) {
-	if (m_mime.find(file_type) != m_mime.end())
-		return m_mime[file_type];
-	else
-		return "";
 }
 
 void Response::getBody(char *buffer, int read_size) {
