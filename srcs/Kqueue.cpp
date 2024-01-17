@@ -42,22 +42,13 @@ void	Kqueue::initServer(Config &config)
 	}
 }
 
-void Kqueue::disconnectClient(int client_fd)
+void Kqueue::disconnectClient(Client& client)
 {
-	Event::changeEvents(change_list, client_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, NULL);
-	std::string client_ip;
-	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
-	{
-		if ((*it)->socket_fd == client_fd)
-		{
-			client_ip = (*it)->ip;
-			v_client.erase(it);
-			delete *it;
-			break;
-		}
-	}
-	close(client_fd);
-	std::cout << "[disconnect client] " << client_ip << std::endl;
+	Event::changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
+	close(client.socket_fd);
+
+	std::cout << "[disconnect client] " << client.ip << std::endl;
+	delete &client;
 }
 
 void Kqueue::connectClient(int server_fd)
@@ -83,8 +74,8 @@ void Kqueue::connectClient(int server_fd)
 			break;
 		}
 	}
-
 	Event::changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, client);
+
 	std::cout << "[connect new client] " << client_ip << std::endl;
 }
 
@@ -98,7 +89,7 @@ void	Kqueue::startServer()
 	{
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
 		if (new_events == -1)
-			throw "kevent error";
+			throw "kevent error"; // handleError ?
 		change_list.clear();
 
 		for (int i = 0; i < new_events; ++i)
@@ -107,9 +98,9 @@ void	Kqueue::startServer()
 			if (curr_event->flags & EV_ERROR)
 			{
 				if (FD_ISSET(curr_event->ident, &server_fds))
-					throw "server socket error";
-				// else if (FD_ISSET(curr_event->ident, &client_fds))
-				// 	disconnectClient(curr_event->ident);
+					throw "server socket error"; // handleError ?
+				else if (FD_ISSET(curr_event->ident, &client_fds))
+					disconnectClient(*static_cast<Client *>(curr_event->udata));
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
@@ -129,9 +120,6 @@ void	Kqueue::startServer()
 						break;
 					case READ_PIPE:
 						Event::readPipe(*client, change_list);
-						break;
-					case DISCONNECT:
-						disconnectClient(client->socket_fd);
 						break;
 					}
 				}
@@ -153,7 +141,7 @@ void	Kqueue::startServer()
 						Event::writePipe(*client, change_list);
 						break;
 					case DISCONNECT:
-						disconnectClient(client->socket_fd);
+						disconnectClient(*client);
 						break;
 					}
 				}

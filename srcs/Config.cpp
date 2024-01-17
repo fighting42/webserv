@@ -137,12 +137,17 @@ void	Config::parseToken()
 
 void	Config::checkConfig()
 {
+	std::vector<int> chk_port;
 	for (std::vector<Server *>::iterator it = v_server.begin(); it != v_server.end(); ++it)
 	{
+		int port = (*it)->getPort();
+		if (std::find(chk_port.begin(), chk_port.end(), port) != chk_port.end())
+			throw "config file error";
+		chk_port.push_back(port);
+		
 		if ((*it)->getPort() < 0 || (*it)->getServer().size() == 0 || (*it)->getLocation().size() == 0)
 			throw "config file error";
 	}
-	// name:port 겹치는지 확인?
 }
 
 void	Config::parseConfig(std::string path)
@@ -154,4 +159,5 @@ void	Config::parseConfig(std::string path)
 	parseToken();
 	parseServer();
 	checkConfig();
+	file.close();
 }

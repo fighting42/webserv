@@ -25,10 +25,6 @@ class Kqueue
   private :
     int kq;
     std::vector<struct kevent> change_list;
-
-    std::vector<int> v_server;
-    std::vector<Client *> v_client;
-
     std::vector<Server *> v_config;
 
   public:
@@ -37,7 +33,7 @@ class Kqueue
     void initServer(Config& config);
     void startServer();
     void connectClient(int server_fd);
-    void disconnectClient(int client_fd);
+    void disconnectClient(Client& client);
 };
 
 #endif

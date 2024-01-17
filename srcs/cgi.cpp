@@ -27,12 +27,10 @@ char** setEnvp(Client& client)
 	std::string method = client.request.getMethod();
 	v_env.push_back("REQUEST_METHOD=" + method);
 	if (method == "GET")
-		v_env.push_back("QUERY_STRING="); // getQuerystr()
+		v_env.push_back("QUERY_STRING=" + client.request.getQueryStr());
 	else if (method == "POST")
 	{
-		// v_env.push_back("CONTENT_LENGTH=" + m_headers["Content-Length"]);
-		// white space 들어가는듯ㅜ 이상해!!!!
-		v_env.push_back("CONTENT_LENGTH=12");
+		v_env.push_back("CONTENT_LENGTH=" + m_headers["Content-Length"]);
 		v_env.push_back("CONTENT_TYPE=" + m_headers["Content-Type"]);
 	}
 

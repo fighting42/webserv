@@ -9,6 +9,7 @@ void    Event::checkMethod(Client& client, std::vector<struct kevent>& change_li
 	client.m_location = client.server->getLocation()[client.request.getUri()];
 	if (client.m_location.size() == 0)
 		client.m_location = client.server->getLocation()["/"];
+
 	// allow_method(405), client_max_body_size(413) 확인하기
 
 	if (client.server->findValue(client.m_location, "cgi_pass").size() > 0)
@@ -35,42 +36,29 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 		std::string idx = rsrcs + v_idx.back();
 		file = idx;
 	}
+
 	std::vector<std::string> v_autoindex = client.server->findValue(client.m_location, "autoindex");
 	if (!v_autoindex.empty() && v_autoindex[0] == "on")
-	{
-		handleAutoindex(client, change_list, rsrcs);
-		return;
-	}
+		return handleAutoindex(client, change_list, rsrcs);
 
-	
 	//index 파일 오픈
 	if (access(file.c_str(), F_OK) == -1)
-	{
-		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
-		close(client.file_fd);
-		handleError(client, change_list, "404");
-		return;
-	}
+		return handleError(client, change_list, "404");
 	client.file_fd = open(file.c_str(), O_RDONLY);
 	if (client.file_fd == -1)
-	{
-		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
-		close(client.file_fd);
-		handleError(client, change_list, "500");
-		return;
-	}
+		return handleError(client, change_list, "500");
+	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 	//파일 내용 저장
 	std::ifstream fout(file.c_str());
 	if (!fout.is_open())
 	{
-		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
+		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
 		close(client.file_fd);
-		handleError(client, change_list, "500");
-		return;
+		return handleError(client, change_list, "500");
 	}
 	client.body = std::string((std::istreambuf_iterator<char>(fout)), std::istreambuf_iterator<char>());
 	//response.setContentType_지우지말아주십셩,,희희,,
-	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
+
 	client.status = READ_FILE;
 }
 
@@ -82,15 +70,9 @@ void    Event::handleDelete(Client& client, std::vector<struct kevent>& change_l
 	std::string root = v_root.back();
 	std::string rsrcs = root + client.request.getUri();
 	if (access(rsrcs.c_str(), F_OK) == -1) //파일 유효성 검사
-	{
-		handleError(client, change_list, "404");
-		return;
-	}
+		return handleError(client, change_list, "404");
 	if (std::remove(rsrcs.c_str())) //파일 삭제 실패
-	{
-		handleError(client, change_list, "500");
-		return;
-	}
+		return handleError(client, change_list, "500");
 
 	char str[17] = "DELETE SUCCESS!\n";
 	client.response.getBody(str, strlen(str));
@@ -107,15 +89,22 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 	time_t now = time(0);
 	struct tm* tm = localtime(&now);
 	char buf[80];
-	strftime(buf, sizeof(buf), "%Y%m%d-%H%M%S", tm);
-	std::string filename = buf; // 현재날짜시간 + 실제 파일 이름 있으면 추가
+	strftime(buf, sizeof(buf), "%y%m%d-%H%M%S", tm);
+	std::vector<std::string> v_value = client.server->findValue(client.m_location, "upload_pass");
 	std::map<std::string, std::string> m_headers = client.request.getHeaders();
-	std::string extension = m_mime_type[m_headers["Content-Type"]]; // m_headers 값 잘 들어있어야됨
-	// std::string path = client.server->findValue(client.m_location, "upload_pass")[0] + "/";
-	// if (path.empty())
-	// 	path = "resources/upload/"; // default
-	std::string path = "resources/upload/";
+	std::string path;
+	if (v_value.size() == 0)
+		path = "resources/upload/"; // default
+	else
+		path = v_value[0] + "/";
+	if (access(path.c_str(), F_OK) == -1)
+		return handleError(client, change_list, "404");
+	std::string filename = buf; // 현재날짜시간 + 실제 파일 이름 있으면 추가
+	std::string extension = m_mime_type[m_headers["Content-Type"]];
+
 	client.file_fd = open((path + filename + extension).c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0777);
+	if (client.file_fd == -1)
+		return handleError(client, change_list, "500");
 
 	// body가 file이면 업로드 구현 -> .data()
 	// application/x-www-form-urlencoded ??
@@ -153,14 +142,14 @@ void    Event::handleError(Client& client, std::vector<struct kevent>& change_li
             error_page = file;
 		}
 	}
-	// access 등 예외처리 추가!
+	if (access(error_page.c_str(), F_OK) == -1)
+		return handleError(client, change_list, "404");
 	client.file_fd = open(error_page.c_str(), O_RDONLY);
-	if (client.file_fd == -1) {
-        client.status = DISCONNECT;
-        return;
-    }
+	if (client.file_fd == -1) 
+		return handleError(client, change_list, "500");
 
 	client.response.setContentType(error_page);
+
 	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = READ_FILE;
 }
@@ -189,7 +178,7 @@ void Event::handleAutoindex(Client& client, std::vector<struct kevent>& change_l
             if (entry->d_type == DT_DIR)
 			{
 				entry_path = uri + "/" + entry_name;
-            	autoindex_html += "<tr><td><a href='" + entry_path + "'>" + entry_name + "</a>" + "</td></tr>";
+				autoindex_html += "<tr><td><a href='" + entry_path + "'>" + entry_name + "</a>" + "</td></tr>";
             }
 			else
 				autoindex_html += "<tr><td>" + entry_name + "</td></tr>";
