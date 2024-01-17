@@ -15,6 +15,8 @@
 #define CYAN    "\033[36m"
 
 extern std::map<std::string, std::string> m_mime_type;
+extern fd_set server_fds;
+extern fd_set client_fds;
 
 class Client;
 

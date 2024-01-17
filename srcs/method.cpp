@@ -38,7 +38,7 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 	//index 파일 오픈
 	if (access(file.c_str(), F_OK) == -1)
 	{
-		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 		close(client.file_fd);
 		handleError(client, change_list, "404");
 		return;
@@ -46,7 +46,7 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 	client.file_fd = open(file.c_str(), O_RDONLY);
 	if (client.file_fd == -1)
 	{
-		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 		close(client.file_fd);
 		handleError(client, change_list, "500");
 		return;
@@ -55,14 +55,14 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 	std::ifstream fout(file.c_str());
 	if (!fout.is_open())
 	{
-		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 		close(client.file_fd);
 		handleError(client, change_list, "500");
 		return;
 	}
 	client.body = std::string((std::istreambuf_iterator<char>(fout)), std::istreambuf_iterator<char>());
 	//response.setContentType_지우지말아주십셩,,희희,,
-	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = READ_FILE;
 }
 
@@ -93,19 +93,20 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 	time_t now = time(0);
 	struct tm* tm = localtime(&now);
 	char buf[80];
-	strftime(buf, sizeof(buf), "%Y%m%d %H:%M:%S", tm);
+	strftime(buf, sizeof(buf), "%Y%m%d-%H%M%S", tm);
 	std::string filename = buf; // 현재날짜시간 + 실제 파일 이름 있으면 추가
 	std::map<std::string, std::string> m_headers = client.request.getHeaders();
 	std::string extension = m_mime_type[m_headers["Content-Type"]]; // m_headers 값 잘 들어있어야됨
-	std::string path = client.server->findValue(client.m_location, "upload_pass")[0] + "/";
-	if (path.empty())
-		path = "resources/upload/"; // default
+	// std::string path = client.server->findValue(client.m_location, "upload_pass")[0] + "/";
+	// if (path.empty())
+	// 	path = "resources/upload/"; // default
+	std::string path = "resources/upload/";
 	client.file_fd = open((path + filename + extension).c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0777);
 
 	// body가 file이면 업로드 구현 -> .data()
 	// application/x-www-form-urlencoded ??
 
-	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = WRITE_FILE;
 }
 
@@ -115,7 +116,7 @@ void    Event::handleCgi(Client& client, std::vector<struct kevent>& change_list
 	execCgi(client);
 	fcntl(client.pipe_fd[0], F_SETFL, O_NONBLOCK);
 	fcntl(client.pipe_fd[1], F_SETFL, O_NONBLOCK);
-	changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = WRITE_PIPE;
 }
 
@@ -146,6 +147,6 @@ void    Event::handleError(Client& client, std::vector<struct kevent>& change_li
     }
 
 	client.response.setContentType(error_page);
-	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = READ_FILE;
 }

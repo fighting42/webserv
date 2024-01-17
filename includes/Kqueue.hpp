@@ -38,10 +38,6 @@ class Kqueue
     void startServer();
     void connectClient(int server_fd);
     void disconnectClient(int client_fd);
-
-    bool isServer(int fd);
-    bool isClient(int fd);
-    Client* getClient(int fd);
 };
 
 #endif

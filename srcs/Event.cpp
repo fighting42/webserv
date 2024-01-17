@@ -2,6 +2,8 @@
 #include "../includes/Client.hpp"
 
 std::map<std::string, std::string> m_mime_type;
+fd_set server_fds;
+fd_set client_fds;
 
 void Event::setMimeType()
 {
@@ -18,6 +20,20 @@ void Event::changeEvents(std::vector<struct kevent>& change_list, uintptr_t iden
 	struct kevent temp_event;
 
 	EV_SET(&temp_event, ident, filter, flags, fflags, data, udata);
+	if (flags == (EV_ADD | EV_ENABLE))
+	{
+		if (!udata)
+			FD_SET(ident, &server_fds);
+		else
+			FD_SET(ident, &client_fds);
+	}
+	else
+	{
+		if (!udata)
+			FD_CLR(ident, &server_fds);
+		else
+			FD_CLR(ident, &client_fds);
+	}
 	change_list.push_back(temp_event);
 }
 
@@ -30,7 +46,7 @@ void Event::readSocket(Client& client, std::vector<struct kevent>& change_list)
 	buf[client.body_length] = '\0';
 	client.request.ReqParsing(buf);
 	// if (!client.request.getChunked())
-		changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+		changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 	if (client.request.getStatus() != "200")
 		handleError(client, change_list, client.request.getStatus());
 
@@ -61,7 +77,7 @@ void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 	client.body_length = read(client.file_fd, buf, sizeof(buf));
 	if (client.body_length <= 0)
 	{
-		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+		changeEvents(change_list, client.file_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 		close(client.file_fd);
 		handleError(client, change_list, "500");
 		return ;
@@ -71,8 +87,8 @@ void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 	client.response.getBody(buf, client.body_length);
 	client.response.makeResponse();
 	close(client.file_fd);
-	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
+	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = SEND_RESPONSE;
 }
 
@@ -96,8 +112,8 @@ void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 	client.response.makeResponse();
 
 	close(client.file_fd);
-	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, NULL);
+	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = SEND_RESPONSE;
 }
 
@@ -112,12 +128,12 @@ void	Event::readPipe(Client& client, std::vector<struct kevent>& change_list)
 	client.body = buf;
 
 	close(client.pipe_fd[0]);
-	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 	if (client.request.getMethod() == "GET")
 	{
 		client.response.getBody(buf, client.body_length);
 		client.response.makeResponse();
-		changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+		changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
 		client.status = SEND_RESPONSE;
 	}
 	else if (client.request.getMethod() == "POST")
@@ -131,8 +147,9 @@ void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
 	// std::string body = client.request.getBody();
 	// body = body.substr(3); // 개행 제거
 	// write(client.pipe_fd[1], body.c_str(), body.length());
+	write(client.pipe_fd[1], &client.request.getBody(), client.request.getBody().size());
 	close(client.pipe_fd[1]);
-	changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, NULL);
+	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = READ_PIPE;
 }

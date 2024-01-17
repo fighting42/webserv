@@ -13,6 +13,8 @@ void	Kqueue::initServer(Config &config)
 		throw "kqueue() error";
 
 	Event::setMimeType();
+	FD_ZERO(&client_fds);
+	FD_ZERO(&server_fds);
 	v_config = config.getServer();
 	for (std::vector<Server *>::iterator it = v_config.begin(); it != v_config.end(); ++it)
 	{
@@ -33,9 +35,8 @@ void	Kqueue::initServer(Config &config)
 			throw "listen() error";
 		fcntl(server_socket, F_SETFL, O_NONBLOCK);
 
-		Event::changeEvents(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 		(*it)->setSocketFd(server_socket);
-		v_server.push_back(server_socket);
+		Event::changeEvents(change_list, server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
 		std::cout << GREEN << "[server start] " << (*it)->getName() << ":" << (*it)->getPort() << RESET << std::endl;
 	}
@@ -43,7 +44,7 @@ void	Kqueue::initServer(Config &config)
 
 void Kqueue::disconnectClient(int client_fd)
 {
-	Event::changeEvents(change_list, client_fd, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+	Event::changeEvents(change_list, client_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, NULL);
 	std::string client_ip;
 	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
 	{
@@ -73,8 +74,6 @@ void Kqueue::connectClient(int server_fd)
 	if (inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof(client_ip)) == NULL)
 		throw "inet_ntop() error";
 
-	Event::changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-	
 	Client *client = new Client(client_socket, client_ip);
 	for (std::vector<Server *>::iterator it = v_config.begin(); it != v_config.end(); ++it)
 	{
@@ -84,45 +83,9 @@ void Kqueue::connectClient(int server_fd)
 			break;
 		}
 	}
-	v_client.push_back(client);
+
+	Event::changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, client);
 	std::cout << "[connect new client] " << client_ip << std::endl;
-}
-
-bool Kqueue::isServer(int fd)
-{
-	if (std::find(v_server.begin(), v_server.end(), fd) != v_server.end())
-		return true;
-	else
-		return false;
-}
-
-bool Kqueue::isClient(int fd)
-{
-	for (std::vector<Client *>::iterator it = v_client.begin(); it != v_client.end(); ++it)
-	{
-		if ((*it)->socket_fd == fd)
-			return true;
-		else if ((*it)->file_fd == fd)
-			return true;
-		else if ((*it)->pipe_fd[0] == fd || (*it)->pipe_fd[1] == fd)
-			return true;
-	}
-	return false;
-}
-
-Client* Kqueue::getClient(int fd)
-{
-	std::vector<Client *>::iterator it;
-	for (it = v_client.begin(); it != v_client.end(); ++it)
-	{
-		if ((*it)->socket_fd == fd)
-			break;
-		else if ((*it)->file_fd == fd)
-			break;
-		else if ((*it)->pipe_fd[0] == fd || (*it)->pipe_fd[1] == fd)
-			break;
-	}
-	return *it;
 }
 
 void	Kqueue::startServer()
@@ -143,18 +106,18 @@ void	Kqueue::startServer()
 			curr_event = &event_list[i];
 			if (curr_event->flags & EV_ERROR)
 			{
-				if (isServer(curr_event->ident))
+				if (FD_ISSET(curr_event->ident, &server_fds))
 					throw "server socket error";
-				// else if (isClient(curr_event->ident))
+				// else if (FD_ISSET(curr_event->ident, &client_fds))
 				// 	disconnectClient(curr_event->ident);
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
-				if (isServer(curr_event->ident))
+				if (FD_ISSET(curr_event->ident, &server_fds))
 					connectClient(curr_event->ident);
-				else if (isClient(curr_event->ident))
+				else if (FD_ISSET(curr_event->ident, &client_fds))
 				{
-					Client *client = getClient(curr_event->ident);
+					Client *client = static_cast<Client *>(curr_event->udata);
 					switch ((int)client->status)
 					{
 					case RECV_REQUEST:
@@ -175,9 +138,9 @@ void	Kqueue::startServer()
 			}
 			else if (curr_event->filter == EVFILT_WRITE)
 			{
-				if (isClient(curr_event->ident))
+				if (FD_ISSET(curr_event->ident, &client_fds))
 				{
-					Client *client = getClient(curr_event->ident);
+					Client *client = static_cast<Client *>(curr_event->udata);
 					switch ((int)client->status)
 					{
 					case SEND_RESPONSE:
