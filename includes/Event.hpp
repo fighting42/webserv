@@ -41,7 +41,7 @@ class Event
 		static void writeFile(Client& client, std::vector<struct kevent>& change_list);
 		static void	readPipe(Client& client, std::vector<struct kevent>& change_list);
 		static void	writePipe(Client& client, std::vector<struct kevent>& change_list);
-		static void execCgi(Client& client);
+		static void execCgi(Client& client, std::vector<struct kevent>& change_list);
 
 		static void	handleGet(Client& client, std::vector<struct kevent>& change_list);
 		static void	handleDelete(Client& client, std::vector<struct kevent>& change_list);

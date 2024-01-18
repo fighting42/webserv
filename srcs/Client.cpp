@@ -14,6 +14,7 @@ Client::Client(int client_socket, std::string client_ip)
 	status = RECV_REQUEST;
 	written = 0;
 	body_length = 0;
+	location_uri = "/";
 }
 
 Client::~Client() {}

@@ -116,7 +116,7 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 void    Event::handleCgi(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "handleCgi()" << std::endl;
-	execCgi(client);
+	execCgi(client, change_list);
 	fcntl(client.pipe_fd[0], F_SETFL, O_NONBLOCK);
 	fcntl(client.pipe_fd[1], F_SETFL, O_NONBLOCK);
 	changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);

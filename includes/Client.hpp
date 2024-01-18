@@ -41,6 +41,7 @@ class Client
         
         Server *server;
         std::map<std::string, std::string> m_location;
+        std::string location_uri;
 
         Client(int client_socket, std::string client_ip);
         ~Client();
