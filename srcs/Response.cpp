@@ -101,7 +101,3 @@ void Response::getBody(char *buffer, int read_size) {
 	for (int i = 0; i < read_size; i++)
 		body.push_back(buffer[i]);
 }
-
-void Response::getBodyStr(const std::string& buffer) {
-      body.insert(body.end(), buffer.begin(), buffer.end());
-}

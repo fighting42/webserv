@@ -10,6 +10,7 @@
 #include <sys/wait.h>
 #include <ctime>
 #include <dirent.h>
+#include <sys/stat.h>
 
 #define RESET   "\033[0m"
 #define BLUE    "\033[34m"
