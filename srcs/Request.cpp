@@ -15,26 +15,6 @@ const std::map<std::string, std::string> &Request::getHeaders() const { return t
 
 Request::~Request(){}
 
-void Request::PrintRequest()
-{
-    std::cout << "\033[1;94m" << std::endl; // blue
-    std::cout << "method: " << this->method << std::endl;
-    std::cout << "uri: " << this->uri << std::endl;
-    std::cout << "version: " << this->version << std::endl;
-    std::cout << "host: " << this->host << std::endl;
-    std::map<std::string, std::string>::iterator it;
-    for (it = this->headers.begin(); it != this->headers.end(); it++) {
-        if (it->first == "Content-Length")
-            std::cout << "Content-Length: " << it->second << std::endl;
-        break;
-    }
-    std::cout << "body: " << std::endl;
-    for (std::vector<char>::iterator it = this->body.begin(); it != this->body.end(); ++it) {
-        std::cout << *it;
-    }
-    std::cout << "\033[0m" << std::endl; // reset
-}
-
 std::vector<std::string> Request::ReqSplit(std::string input, char delimiter) 
 {
     std::vector<std::string> ret;
@@ -59,69 +39,32 @@ std::vector<std::string> Request::ReqSplit(std::string input, char delimiter)
     return ret;
 }
 
-std::string Request::removeWhiteSpace(std::string str)
+void Request::controlChunked(size_t found, int flag)
 {
-    std::string tmp;
-    size_t idx;
-
-    tmp = str.substr(2, str.size());
-    for (idx = 0; idx < tmp.size(); idx++)
+    std::map<std::string, std::string>::iterator it;
+    ssize_t length;
+    for (it = this->headers.begin(); it != this->headers.end(); it++) {
+        if (it->first == "Content-Length")
+            length = hexToDec(it->second);
+        break;
+    }
+    if (found != this->req_msg.size() && found < this->req_msg.size()) {
+            std::string buf = this->req_msg.substr(found, this->req_msg.size());
+            for (size_t i = 0; i < buf.size() ; i++)
+                this->buffer.push_back(buf[i]);
+    }
+    if (this->buffer.size() != static_cast<size_t>(length) || length == -1) {
+        this->status = "404"; //에러 코드 맞는지 확인하기 -> 사이즈 확인
+        return ;
+    }
+    if (flag == 0) //첫번째 chunked일 때
     {
-        if (tmp[idx] == '\t' || tmp[idx] == '\n' || tmp[idx] == '\r' || \
-            tmp[idx] == '\v' || tmp[idx] == '\f' || tmp[idx] == ' ')
-            break ;
+        for (size_t i = 0; i < this->buffer.size() ; i++) {
+                this->body.push_back(this->buffer[i]);
+                this->body_size++;
+        }
     }
-    tmp = tmp.substr(0, idx);
-    return (tmp);
-}
-
-std::string Request::checkQuery(std::string uri)
-{
-    size_t idx;
-    for (idx = 0; idx < uri.size() ; idx++) {
-        if (uri[idx] == '?')
-            break ;
-    }
-    if (idx == uri.size())
-        return (uri);
-    else {
-        std::string q_str;
-        std::string u_str;
-        u_str = uri.substr(0, idx);
-        q_str = uri.substr(idx+1, uri.size()-idx-1);
-        this->query_str = q_str;
-        return (u_str);
-    }
-}
-
-ssize_t Request::hexToDec(const std::string& hex) 
-{
-	ssize_t ret = 0;
-    size_t i;
-
-	for (i = 0; i < hex.size(); i++) {
-		ret *= 16;
-		if (hex[i] >= '0' && hex[i] <= '9')
-			ret += hex[i] - '0'; // '0' ~ '9'까지의 경우
-        else if (hex[i] >= 'a' && hex[i] <= 'f')
-			ret += hex[i] - 'a' + 10; // 'a' ~ 'f'까지의 경우
-        else if (hex[i] >= 'A' && hex[i] <= 'F')
-			ret += hex[i] - 'A' + 10; // 'A' ~ 'F'까지의 경우
-        else
-			return (-1);
-	}
-	return (ret);
-}
-
-void Request::controlChunked(std::string msg, int flag)
-{
-    (void) msg;
-
-    if (flag == 0)
-    {
-
-    }
-    else
+    else // 첫번째 chunked가 아닐 때
     {
 
     }
@@ -129,15 +72,8 @@ void Request::controlChunked(std::string msg, int flag)
     return ;
 }
 
-//"0/n" chunked라면 content-length(16진법)가 지금 들어온 바디 size 체크 용으로만 사용하고 마지막 문자 나올 떄까지 받아
-
-void Request::ReqParsing(std::string msg)
+std::size_t Request::LineParsing(std::string msg)
 {
-    if (this->chunked)
-    {
-        controlChunked(msg, 1);
-        return ;
-    }
     this->req_msg = msg;
     std::size_t found = this->req_msg.find("\n");
     std::string first = this->req_msg.substr(0, found);
@@ -173,14 +109,30 @@ void Request::ReqParsing(std::string msg)
             this->chunked = true;
         found = found_tmp;
     }
+    return (found);
+}
+
+//"0/n" chunked라면 content-length(16진법)가 지금 들어온 바디 size 체크 용으로만 사용하고 마지막 문자 나올 떄까지 받아
+
+void Request::ReqParsing(std::string msg)
+{
+    std::size_t found;
+    if (this->chunked) //chunked인데 첫번째 아닐 떄
+    {
+        found = LineParsing(msg);
+        controlChunked(found, 1);
+        return ;
+    }
+    found = LineParsing(msg);
     if (this->chunked)
-        controlChunked(msg, 0);
+        controlChunked(found, 0); // 첫번째 chunked일 때
     else {
         if (found != this->req_msg.size() && found < this->req_msg.size()) {
             std::string buf = this->req_msg.substr(found, this->req_msg.size());
             for (size_t i = 0; i < buf.size() ; i++)
                 this->body.push_back(buf[i]);
         }
+        this->body_size = this->body.size();
     }
 }
 

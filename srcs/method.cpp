@@ -38,8 +38,16 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 	}
 
 	std::vector<std::string> v_autoindex = client.server->findValue(client.m_location, "autoindex");
-	if (!v_autoindex.empty() && v_autoindex[0] == "on")
-		return handleAutoindex(client, change_list, rsrcs);
+
+    struct stat statbuf;
+	if (!v_autoindex.empty() && v_autoindex[0] == "on")//오토인덱스 온이면
+    {
+	    if (stat(rsrcs.c_str(), &statbuf) != -1) //디렉토리면(파일이면) 오토인덱스하기
+		{
+			if (statbuf.st_mode & S_IFDIR )
+				return handleAutoindex(client, change_list, rsrcs);
+		}
+	}
 
 	//index 파일 오픈
 	if (access(file.c_str(), F_OK) == -1)
@@ -174,14 +182,8 @@ void Event::handleAutoindex(Client& client, std::vector<struct kevent>& change_l
 			std::string entry_name = entry->d_name;
             std::string entry_path = entry_name;
             std::string entry_link = "<a href='" + entry_path + "'>" + entry_name + "</a>";
-            // 만약 폴더라면 하이퍼링크 걸어주기
-            if (entry->d_type == DT_DIR)
-			{
-				entry_path = uri + "/" + entry_name;
-				autoindex_html += "<tr><td><a href='" + entry_path + "'>" + entry_name + "</a>" + "</td></tr>";
-            }
-			else
-				autoindex_html += "<tr><td>" + entry_name + "</td></tr>";
+			entry_path = uri + "/" + entry_name;
+			autoindex_html += "<tr><td><a href='" + entry_path + "'>" + entry_name + "</a>" + "</td></tr>";
 		}
 		closedir(dp);
 	}

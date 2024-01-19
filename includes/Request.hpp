@@ -17,10 +17,10 @@ class Request
     std::string host;
 		std::map<std::string, std::string> headers;
     std::string status;
-    // std::vector<char> buffer;
+    std::vector<char> buffer;
 	  size_t content_length;
 	  std::vector<char> body;
-	  // size_t body_size;
+	  size_t body_size;
     std::string query_str;
     bool chunked;
     
@@ -37,10 +37,11 @@ class Request
 	  const std::map<std::string, std::string>& getHeaders() const;
     void PrintRequest();
     void ReqParsing(std::string msg);
+    std::size_t LineParsing(std::string msg);
     std::vector<std::string> ReqSplit(std::string input, char delimiter);
     std::string removeWhiteSpace(std::string str);
     std::string checkQuery(std::string uri);
-    void controlChunked(std::string msg, int flag);
+    void controlChunked(size_t found, int flag);
     ssize_t hexToDec(const std::string& hex);
 };
 
