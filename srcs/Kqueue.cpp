@@ -23,6 +23,11 @@ void	Kqueue::initServer(Config &config)
 
 		if ((server_socket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
 			throw "socket() error";
+		
+		//포트 중복 허용
+		int option;
+		option = 1;
+		setsockopt( server_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
 		memset(&server_addr, 0, sizeof(server_addr));
 		server_addr.sin_family = AF_INET;

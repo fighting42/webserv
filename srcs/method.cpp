@@ -175,19 +175,20 @@ void Event::handleAutoindex(Client& client, std::vector<struct kevent>& change_l
             std::string entry_path = entry_name;
             std::string entry_link = "<a href='" + entry_path + "'>" + entry_name + "</a>";
             // 만약 폴더라면 하이퍼링크 걸어주기
-            if (entry->d_type == DT_DIR)
-			{
+            //if (entry->d_type == DT_DIR)
+			//{
 				entry_path = uri + "/" + entry_name;
 				autoindex_html += "<tr><td><a href='" + entry_path + "'>" + entry_name + "</a>" + "</td></tr>";
-            }
-			else
-				autoindex_html += "<tr><td>" + entry_name + "</td></tr>";
+            //}
+			//else
+				//autoindex_html += "<tr><td>" + entry_name + "</td></tr>";
 		}
 		closedir(dp);
 	}
 	autoindex_html += "</table></ul></body></html>";
 	// 응답 body에 써주기
-	client.response.setBody(std::vector<char>(autoindex_html.begin(), autoindex_html.end()));
+	//client.response.setBody(std::vector<char>(autoindex_html.begin(), autoindex_html.end()));
+	client.response.getBodyStr(autoindex_html);
 	client.response.makeResponse();
 	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = SEND_RESPONSE;

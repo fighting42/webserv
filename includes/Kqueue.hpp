@@ -12,6 +12,8 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <sys/event.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #define RESET   "\033[0m"
 #define GREEN   "\033[32m"

@@ -32,6 +32,7 @@ class Response
 		void setStatus(const std::string& obj);
 		void setContentType(const std::string& resource);
 		void getBody(char* buffer, int read_size);
+		void getBodyStr(const std::string& buffer);
 
 		void print();
 		void makeResponse();
