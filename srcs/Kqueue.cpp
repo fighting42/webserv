@@ -25,8 +25,7 @@ void	Kqueue::initServer(Config &config)
 			throw "socket() error";
 		
 		//포트 중복 허용
-		int option;
-		option = 1;
+		int option = 1;
 		setsockopt( server_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
 		memset(&server_addr, 0, sizeof(server_addr));
@@ -49,10 +48,10 @@ void	Kqueue::initServer(Config &config)
 
 void Kqueue::disconnectClient(Client& client)
 {
+	std::cout << "[disconnect client] " << client.ip << ", " << client.socket_fd << std::endl;
 	Event::changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
 	close(client.socket_fd);
 
-	std::cout << "[disconnect client] " << client.ip << std::endl;
 	delete &client;
 }
 
@@ -81,7 +80,7 @@ void Kqueue::connectClient(int server_fd)
 	}
 	Event::changeEvents(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, client);
 
-	std::cout << "[connect new client] " << client_ip << std::endl;
+	std::cout << "[connect new client] " << client_ip << ", " << client_socket << std::endl;
 }
 
 void	Kqueue::startServer()
@@ -94,19 +93,20 @@ void	Kqueue::startServer()
 	{
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
 		if (new_events == -1)
-			throw "kevent error"; // handleError ?
+			throw "kevent error";
 		change_list.clear();
 
-		for (int i = 0; i < new_events; ++i)
+		for (int i = 0; i < new_events; i++)
 		{
 			curr_event = &event_list[i];
 			if (curr_event->flags & EV_ERROR)
 			{
 				if (FD_ISSET(curr_event->ident, &server_fds))
-					throw "server socket error"; // handleError ?
-				else if (FD_ISSET(curr_event->ident, &client_fds))
-					disconnectClient(*static_cast<Client *>(curr_event->udata));
+					throw "server socket error";
 			}
+			else if ((curr_event->flags & EV_EOF && FD_ISSET(curr_event->ident, &client_fds)) || \
+				(curr_event->filter == EVFILT_TIMER && FD_ISSET(curr_event->ident, &client_fds)))
+				disconnectClient(*static_cast<Client *>(curr_event->udata));
 			else if (curr_event->filter == EVFILT_READ)
 			{
 				if (FD_ISSET(curr_event->ident, &server_fds))

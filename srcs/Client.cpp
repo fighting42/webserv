@@ -2,7 +2,7 @@
 #include "../includes/Server.hpp"
 #include "../includes/Request.hpp"
 
-Client::Client() {}
+Client::Client(): socket_fd(0), ip("") {}
 
 Client::Client(int client_socket, std::string client_ip)
 {

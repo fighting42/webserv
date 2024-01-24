@@ -62,6 +62,8 @@ void Event::readSocket(Client& client, std::vector<struct kevent>& change_list)
 	buf[client.body_length] = '\0';
 	client.request.ReqParsing(buf);
 
+	if (client.request.getChunked())
+		changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 60, &client);
 	if (!client.request.getChunked() || client.request.getStatus() != "200")
 		changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
 	if (client.request.getStatus() != "200")
@@ -83,6 +85,12 @@ void Event::writeSocket(Client& client, std::vector<struct kevent>& change_list)
 
 	if (client.written == static_cast<ssize_t>(send_buffer.size())) //다쓰면 연결해제
 		client.status = DISCONNECT;
+	std::map<std::string, std::string> headers = client.request.getHeaders();
+	if (headers["Connection"] == "keep-alive")
+	{
+		changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 75, &client);
+		client.status = RECV_REQUEST;
+	}
 
 	std::cout << CYAN << "[response message]" << std::endl << &send_buffer[client.written - write_size] << RESET << std::endl;
 }
