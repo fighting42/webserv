@@ -166,13 +166,24 @@ void Request::ReqParsing(std::string msg)
         if (this->chunked == false)
             this->chunked_done = false;
     }
-    else { //chunked아닐 때 body
+    else {
         if (found != this->req_msg.size() && found < this->req_msg.size()) {
             std::string buf = this->req_msg.substr(found, this->req_msg.size());
             for (size_t i = 0; i < buf.size() ; i++)
                 this->body.push_back(buf[i]);
         }
         this->body_size = this->body.size();
+    }
+    if (this->method == "POST") {
+        std::map<std::string, std::string>::iterator it;
+        for (it = this->headers.begin(); it != this->headers.end(); it++) {
+            if (it->first == "Content-Length")
+                if(it->second == "0")
+                    this->status = "411";
+            break;
+    }
+        if (it == this->headers.end())
+            this->status = "411";
     }
     return ;
 }
