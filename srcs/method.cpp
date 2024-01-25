@@ -11,7 +11,41 @@ void    Event::checkMethod(Client& client, std::vector<struct kevent>& change_li
 		client.m_location = client.server->getLocation()["/"];
 
 	// allow_method(405), client_max_body_size(413) 확인하기
-
+	std::vector<std::string> v_allow_method = client.server->findValue(client.m_location, "allow_method");
+	bool methodAllowed = false;
+	if (v_allow_method.size() > 0)
+	{
+		for (size_t i = 0; i < v_allow_method.size(); ++i) 
+		{
+    		if (v_allow_method[i] == client.request.getMethod())
+			{
+				methodAllowed = true;
+        		break;
+			}
+		}
+		if (!methodAllowed)
+    		return handleError(client, change_list, "405");
+	}
+	std::vector<std::string> v_client_max_body_size = client.server->findValue(client.m_location, "client_max_body_size");
+	std::map<std::string, std::string> m_headers = client.request.getHeaders();
+	std::stringstream ss;
+	std::stringstream ss1;
+	int num_client_max_body_size;
+	int num_m_headers;
+	if ((v_client_max_body_size.size() > 0) && (client.request.getMethod() == "POST"))
+	{
+		ss << v_client_max_body_size[0];
+		ss >> num_client_max_body_size;
+		ss1 << m_headers["Content-Length"];
+		ss1 >> num_m_headers;
+		// std::cout << "맥스바디사이즈 :" <<num_client_max_body_size << std::endl;
+		// std::cout << "컨텐트 렝뜨: " <<m_headers["Content-Length"] << std::endl;
+		// std::cout << "헤더,,,:" <<num_m_headers << std::endl;
+		if (num_client_max_body_size < num_m_headers)
+		{
+			return handleError(client, change_list, "413");
+		}
+	}
 	if (client.server->findValue(client.m_location, "cgi_pass").size() > 0)
 		handleCgi(client, change_list);
 	else if (client.request.getMethod() == "GET")
@@ -44,7 +78,7 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
     {
 	    if (stat(rsrcs.c_str(), &statbuf) != -1) //디렉토리면(파일이면) 오토인덱스하기
 		{
-			if (statbuf.st_mode & S_IFDIR )
+			if (statbuf.st_mode & S_IFDIR)
 				return handleAutoindex(client, change_list, rsrcs);
 		}
 	}
@@ -65,8 +99,7 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 		return handleError(client, change_list, "500");
 	}
 	client.body = std::string((std::istreambuf_iterator<char>(fout)), std::istreambuf_iterator<char>());
-	//response.setContentType_지우지말아주십셩,,희희,,
-
+	client.response.setContentType(file);
 	client.status = READ_FILE;
 }
 

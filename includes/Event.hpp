@@ -11,6 +11,7 @@
 #include <ctime>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sstream>
 
 #define RESET   "\033[0m"
 #define BLUE    "\033[34m"
