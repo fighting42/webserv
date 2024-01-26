@@ -1,30 +1,6 @@
 #include "../includes/Event.hpp"
 #include "../includes/Client.hpp"
 
-std::map<std::string, std::string> m_mime_type;
-fd_set server_fds;
-fd_set client_fds;
-
-void Event::setMimeType()
-{
-	m_mime_type.insert(std::pair<std::string, std::string>("text/html", ".html"));
-	m_mime_type.insert(std::pair<std::string, std::string>("text/plain", ".txt"));
-	m_mime_type.insert(std::pair<std::string, std::string>("image/png", ".png"));
-	m_mime_type.insert(std::pair<std::string, std::string>("multipart/form-data", ".binary"));
-	m_mime_type.insert(std::pair<std::string, std::string>("application/octet-stream", ""));
-}
-
-std::string Event::getMimeType(std::string extension)
-{
-	for (std::map<std::string, std::string>::iterator it = m_mime_type.begin(); \
-		it != m_mime_type.end(); ++it)
-	{
-		if (it->second == extension)
-			return it->first;
-	}
-	return "";
-}
-
 void Event::changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, \
 	int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
@@ -119,7 +95,7 @@ void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 	std::cout << "writeFile()" << std::endl;
 
 	// cgi를 거치지 않았을 때
-	if (client.server->findValue(client.m_location, "cgi_pass").size() == 0) 
+	if (client.server->findValue(client.m_location, "cgi_path").empty()) 
 	{
 		std::string str = "";
 		for (size_t i=3; i < client.request.getBody().size(); i++)
