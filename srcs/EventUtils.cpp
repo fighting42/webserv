@@ -51,10 +51,7 @@ std::string	Event::getRootpath(Client& client)
 	std::string path = "";
 	std::vector<std::string> v_root = client.server->findValue(client.m_location, "root");
 	if (v_root.size() != 0)
-	{
-		if (v_root[0] != client.request.getUri().substr(1, v_root[0].length()))
 			path += v_root[0];
-	}
 	if (client.request.getUri() != client.location_uri)
 	{
 		if (client.location_uri == "/")
@@ -73,7 +70,6 @@ std::string	Event::getRootpath(Client& client, std::string path)
 	if (v_root.size() != 0)
 		ret_path += v_root[0] + "/";
 	ret_path += path;
-
 	return ret_path;
 }
 
@@ -165,15 +161,13 @@ void Event::handleAutoindex(Client& client, std::vector<struct kevent>& change_l
 	DIR* dp = opendir(uri.c_str());
 	if (dp != NULL) 
 	{
-		size_t resources_pos = uri.find("resources/");
-		if (resources_pos != std::string::npos) 
-		uri = uri.substr(resources_pos + std::string("resources/").length());
 		while ((entry = readdir(dp))) 
 		{
 			std::string entry_name = entry->d_name;
-            std::string entry_path = entry_name;
-            std::string entry_link = "<a href='" + entry_path + "'>" + entry_name + "</a>";
-			entry_path = uri + "/" + entry_name;
+            std::string entry_path = "http://" + client.request.getHost() + client.request.getUri();
+			if (client.request.getUri() != "/")
+				entry_path += "/";
+			entry_path += entry_name;
 			autoindex_html += "<tr><td><a href='" + entry_path + "'>" + entry_name + "</a>" + "</td></tr>";
 		}
 		closedir(dp);

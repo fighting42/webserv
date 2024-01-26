@@ -26,7 +26,6 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 	std::cout << "handleGet()" << std::endl;
 
 	std::string file = getRootpath(client);
-	std::cout << file << std::endl;
 	std::vector<std::string> v_autoindex = client.server->findValue(client.m_location, "autoindex");
     struct stat statbuf;
 	if (!v_autoindex.empty() && v_autoindex[0] == "on")//오토인덱스 온이면
