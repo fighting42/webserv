@@ -51,22 +51,18 @@ std::string	Event::getRootpath(Client& client)
 	std::string path = "";
 	std::vector<std::string> v_root = client.server->findValue(client.m_location, "root");
 	if (v_root.size() != 0)
-		path += v_root[0];
+	{
+		if (v_root[0] != client.request.getUri().substr(1, v_root[0].length()))
+			path += v_root[0];
+	}
 	if (client.request.getUri() != client.location_uri)
 	{
 		if (client.location_uri == "/")
 			path += "/";
 		path += client.request.getUri().substr(client.location_uri.length());
 	}
-	
-	// location에 index 설정이 되어있고, 요청 uri와 location uri가 같으면! index파일 리다이렉션
-	if (client.request.getMethod() == "GET")
-	{
-		std::vector<std::string> v_index = client.server->findValue(client.m_location, "index");
-		if (v_index.size() != 0 && client.request.getUri() == client.location_uri)
-			path += "/" + v_index[0];
-	}
-
+	if (path[0] == '/')
+		path = path.substr(1);
 	return path;
 }
 

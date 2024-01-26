@@ -8,6 +8,8 @@ void    Event::checkMethod(Client& client, std::vector<struct kevent>& change_li
 
 	findLocation(client);
 	checkConfig(client, change_list);
+	if (client.status != RECV_REQUEST)
+		return;
 
 	if (!client.server->findValue(client.m_location, "cgi_path").empty())
 		handleCgi(client, change_list);
@@ -24,6 +26,7 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 	std::cout << "handleGet()" << std::endl;
 
 	std::string file = getRootpath(client);
+	std::cout << file << std::endl;
 	std::vector<std::string> v_autoindex = client.server->findValue(client.m_location, "autoindex");
     struct stat statbuf;
 	if (!v_autoindex.empty() && v_autoindex[0] == "on")//오토인덱스 온이면
@@ -35,6 +38,10 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 		}
 	}
 
+	// location에 index 설정이 되어있고, 요청 uri와 location uri가 같으면! index파일 리다이렉션
+	std::vector<std::string> v_index = client.server->findValue(client.m_location, "index");
+	if (v_index.size() != 0 && client.request.getUri() == client.location_uri)
+		file += "/" + v_index[0];
 	//index 파일 오픈
 	if (access(file.c_str(), F_OK) == -1)
 		return handleError(client, change_list, "404");
