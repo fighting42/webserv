@@ -62,11 +62,15 @@ void Event::writeSocket(Client& client, std::vector<struct kevent>& change_list)
 	if (client.written == static_cast<ssize_t>(send_buffer.size())) //다쓰면 연결해제
 		client.status = DISCONNECT;
 	std::map<std::string, std::string> headers = client.request.getHeaders();
-	if (headers["Connection"] == "keep-alive")
-	{
-		changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 75, &client);
-		client.status = RECV_REQUEST;
-	}
+	
+	// ㅠㅠㅠㅠㅠㅠㅠ눈물좔좔
+	// if (headers["Connection"] == "keep-alive")
+	// {
+	// 	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
+	// 	changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 75, &client);
+	// 	changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
+	// 	client.status = RECV_REQUEST;
+	// }
 
 	std::cout << CYAN << "[response message]" << std::endl << &send_buffer[client.written - write_size] << RESET << std::endl;
 }
@@ -104,6 +108,10 @@ void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 		client.body_length = str.length();
 	}
 
+	if (client.file)
+	{
+		write(client.file_fd, client.file, 1024);
+	}
 	ssize_t write_size = write(client.file_fd, client.body.c_str(), client.body_length);
 	close(client.file_fd);
 	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
