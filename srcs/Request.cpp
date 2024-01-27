@@ -66,13 +66,13 @@ void Request::controlChunked(size_t found)
             if (this->req_msg.find("\r\n\r\n") == found_RN)
                 this->body_done = true;
         }
-        // std::cout << "chunked size : " << size << std::endl; //삭제
+        // std::cout << "줄 길이여야 하는 것 " << line_size << std::endl;
         while(chk_size < size) {
             found_C = this->req_msg.find("\r\n", found_RN + 2);
             line_contents = this->req_msg.substr(found_RN + 2, found_C-(found_RN+2));
             chk_size += (line_contents.size());
-            // std::cout << "chk_size: " << chk_size << "line_size " << line_contents.size() << std::endl; //삭제
-            if (chk_size + 2 < size) {
+            // std::cout << "누적 길이 chk_size: " << chk_size << "한 줄 길이  " << line_contents.size() << std::endl; //삭제
+            if (chk_size + 2 <= size) {
                 for (size_t i = 0; i < line_contents.size() ; i++)
                     tmp.push_back(line_contents[i]);
                 tmp.push_back('\r');
@@ -83,23 +83,18 @@ void Request::controlChunked(size_t found)
                 chk_size += 2;
             }
             else  if (chk_size == size) {
-                // std::cout << "same" << std::endl;
                 for (size_t i = 0; i < line_contents.size() ; i++)
                     tmp.push_back(line_contents[i]);
-                // for (std::vector<char>::iterator it = tmp.begin(); it != tmp.end() ; ++it)
-                //     std::cout << *it;
-                // std::cout << '\n';
                 break;
             }
             else 
                 break;
             found_RN = found_C;
         }
-        // std::cout << "tmp size " << tmp.size() << std::endl; //삭제
+        std::cout << "최종 tmp size " << tmp.size() << std::endl; //삭제
         if (tmp.size() != static_cast<size_t>(size) || size == -1) { //size맞지 않을 때
             this->buffer.clear();
-            // std::cout << "error" <<std::endl; //삭제
-            this->status = "400"; //에러 코드 맞는지 확인하기 -> chat gpt피셜 보통 400이나 500이 나온다고
+            this->status = "400";
             return ;
         }
         for (size_t i = 0; i < tmp.size() ; i++)
@@ -192,8 +187,8 @@ void Request::ReqParsing(std::string msg)
 // {
 //     Request Req;
 
-//     // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\nE\r\nin\r\n\r\nchunks.\r\n0\r\n\r\n";
-//     std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\n2\r\nin\r\n7\r\nchunks.\r\n0\r\n\r\n";
+//     std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\nE\r\nin\r\n\r\nchunks.\r\n0\r\n\r\n";
+//     // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\n2\r\nin\r\n7\r\nchunks.\r\n0\r\n\r\n";
 //     Req.ReqParsing(msg);
 //     Req.PrintRequest();
 //     return (0);
