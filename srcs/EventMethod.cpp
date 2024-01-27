@@ -6,13 +6,12 @@ void    Event::checkMethod(Client& client, std::vector<struct kevent>& change_li
 	if (client.status != RECV_REQUEST || client.request.getChunked())
 		return;
 
-	client.m_location = client.server->getLocation()[client.request.getUri()];
-	if (client.m_location.size() == 0)
-		client.m_location = client.server->getLocation()["/"];
+	findLocation(client);
+	checkConfig(client, change_list);
+	if (client.status != RECV_REQUEST)
+		return;
 
-	// allow_method(405), client_max_body_size(413) 확인하기
-
-	if (client.server->findValue(client.m_location, "cgi_pass").size() > 0)
+	if (!client.server->findValue(client.m_location, "cgi_path").empty())
 		handleCgi(client, change_list);
 	else if (client.request.getMethod() == "GET")
 		handleGet(client, change_list);
@@ -26,29 +25,22 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 {
 	std::cout << "handleGet()" << std::endl;
 
-	std::vector<std::string> v_root = client.server->findValue(client.m_location, "root");
-	std::string root = v_root.back();
-	std::string rsrcs = root + client.request.getUri();
-	std::string file = rsrcs;
-	if (rsrcs[rsrcs.find("resources") + 10] == '\0')
-	{
-		std::vector<std::string> v_idx = client.server->findValue(client.m_location, "index");
-		std::string idx = rsrcs + v_idx.back();
-		file = idx;
-	}
-
+	std::string file = getRootpath(client);
 	std::vector<std::string> v_autoindex = client.server->findValue(client.m_location, "autoindex");
-
     struct stat statbuf;
 	if (!v_autoindex.empty() && v_autoindex[0] == "on")//오토인덱스 온이면
     {
-	    if (stat(rsrcs.c_str(), &statbuf) != -1) //디렉토리면(파일이면) 오토인덱스하기
+	    if (stat(file.c_str(), &statbuf) != -1) //디렉토리면(파일이면) 오토인덱스하기
 		{
 			if (statbuf.st_mode & S_IFDIR )
-				return handleAutoindex(client, change_list, rsrcs);
+				return handleAutoindex(client, change_list, file);
 		}
 	}
 
+	// location에 index 설정이 되어있고, 요청 uri와 location uri가 같으면! index파일 리다이렉션
+	std::vector<std::string> v_index = client.server->findValue(client.m_location, "index");
+	if (v_index.size() != 0 && client.request.getUri() == client.location_uri)
+		file += "/" + v_index[0];
 	//index 파일 오픈
 	if (access(file.c_str(), F_OK) == -1)
 		return handleError(client, change_list, "404");
@@ -65,8 +57,7 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 		return handleError(client, change_list, "500");
 	}
 	client.body = std::string((std::istreambuf_iterator<char>(fout)), std::istreambuf_iterator<char>());
-	//response.setContentType_지우지말아주십셩,,희희,,
-
+	client.response.setContentType(file);
 	client.status = READ_FILE;
 }
 
@@ -74,12 +65,10 @@ void    Event::handleDelete(Client& client, std::vector<struct kevent>& change_l
 {
 	std::cout << "handleDelete()" << std::endl;
 
-	std::vector<std::string> v_root = client.server->findValue(client.m_location, "root");
-	std::string root = v_root.back();
-	std::string rsrcs = root + client.request.getUri();
-	if (access(rsrcs.c_str(), F_OK) == -1) //파일 유효성 검사
+	std::string file = getRootpath(client);
+	if (access(file.c_str(), F_OK) == -1) //파일 유효성 검사
 		return handleError(client, change_list, "404");
-	if (std::remove(rsrcs.c_str())) //파일 삭제 실패
+	if (std::remove(file.c_str())) //파일 삭제 실패
 		return handleError(client, change_list, "500");
 
 	char str[17] = "DELETE SUCCESS!\n";
@@ -98,7 +87,7 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 	struct tm* tm = localtime(&now);
 	char buf[80];
 	strftime(buf, sizeof(buf), "%y%m%d-%H%M%S", tm);
-	std::vector<std::string> v_value = client.server->findValue(client.m_location, "upload_pass");
+	std::vector<std::string> v_value = client.server->findValue(client.m_location, "upload_path");
 	std::map<std::string, std::string> m_headers = client.request.getHeaders();
 	std::string path;
 	if (v_value.size() == 0)
@@ -113,7 +102,18 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 	client.file_fd = open((path + filename + extension).c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0777);
 	if (client.file_fd == -1)
 		return handleError(client, change_list, "500");
+	
+	if (m_headers["Content-Length"].empty() || client.request.getBody().size() == 0) // body size 0
+	{
+		char str[15] = "POST SUCCESS!\n";
+		client.response.getBody(str, strlen(str));
+		client.response.makeResponse();
+		changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
+		client.status = SEND_RESPONSE;
+		return;
+	}
 
+	if (!client.file) std::cout << "file!" << std::endl;
 	// body가 file이면 업로드 구현 -> .data()
 	// application/x-www-form-urlencoded ??
 
@@ -137,19 +137,14 @@ void    Event::handleError(Client& client, std::vector<struct kevent>& change_li
 	client.response.setStatus(error_code);
 
 	std::string error_page;
-	if ((error_page = client.server->findErrorPage(error_code)) == "")
+	if ((error_page = client.server->findErrorPage(error_code)).empty())
 	{
-		if ((error_page = client.server->findLocationErrorPage(client.request.getUri(), error_code)) == "")
+		if ((error_page = client.server->findLocationErrorPage(client.location_uri, error_code)).empty())
 			error_page = "resources/error.html";
 		else
-		{
-            std::vector<std::string> v_root = client.server->findValue(client.m_location, "root");
-            std::string root = v_root.back();
-            std::string rsrcs = root + error_page;
-            std::string file = rsrcs;
-            error_page = file;
-		}
+			error_page = getRootpath(client, error_page);
 	}
+
 	if (access(error_page.c_str(), F_OK) == -1)
 		return handleError(client, change_list, "404");
 	client.file_fd = open(error_page.c_str(), O_RDONLY);
@@ -160,37 +155,4 @@ void    Event::handleError(Client& client, std::vector<struct kevent>& change_li
 
 	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = READ_FILE;
-}
-
-void Event::handleAutoindex(Client& client, std::vector<struct kevent>& change_list, std::string uri) 
-{
-	// html 코드 생성
-	std::string autoindex_html = "<html><head><meta charset=\"UTF-8\"></head>" \
-    "<style>body { background-color: white; font-family: Trebuchet MS;}</style>" \
-	"<body><h1>" + uri + " List</h1><ul>";
-	autoindex_html += "<table>";
-	// 목록 채우기
-	struct dirent* entry;
-	DIR* dp = opendir(uri.c_str());
-	if (dp != NULL) 
-	{
-		size_t resources_pos = uri.find("resources/");
-		if (resources_pos != std::string::npos) 
-		uri = uri.substr(resources_pos + std::string("resources/").length());
-		while ((entry = readdir(dp))) 
-		{
-			std::string entry_name = entry->d_name;
-            std::string entry_path = entry_name;
-            std::string entry_link = "<a href='" + entry_path + "'>" + entry_name + "</a>";
-			entry_path = uri + "/" + entry_name;
-			autoindex_html += "<tr><td><a href='" + entry_path + "'>" + entry_name + "</a>" + "</td></tr>";
-		}
-		closedir(dp);
-	}
-	autoindex_html += "</table></ul></body></html>";
-	// 응답 body에 써주기
-	client.response.setBody(std::vector<char>(autoindex_html.begin(), autoindex_html.end()));
-	client.response.makeResponse();
-	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-	client.status = SEND_RESPONSE;
 }

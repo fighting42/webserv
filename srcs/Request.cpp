@@ -1,7 +1,7 @@
 #include "../includes/Request.hpp"
 
 Request::Request()
-    :method("default"), uri("default"), version("default"), status("200"), query_str(""), chunked(false), chunked_done(false), body_done(false)
+    :method("default"), uri("default"), version("default"), status("200"), query_str(""), chunked(false), body_done(false), chunked_done(false)
 {
     this->body.clear();
     this->buffer.clear();

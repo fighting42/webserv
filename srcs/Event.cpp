@@ -1,30 +1,6 @@
 #include "../includes/Event.hpp"
 #include "../includes/Client.hpp"
 
-std::map<std::string, std::string> m_mime_type;
-fd_set server_fds;
-fd_set client_fds;
-
-void Event::setMimeType()
-{
-	m_mime_type.insert(std::pair<std::string, std::string>("text/html", ".html"));
-	m_mime_type.insert(std::pair<std::string, std::string>("text/plain", ".txt"));
-	m_mime_type.insert(std::pair<std::string, std::string>("image/png", ".png"));
-	m_mime_type.insert(std::pair<std::string, std::string>("multipart/form-data", ".binary"));
-	m_mime_type.insert(std::pair<std::string, std::string>("application/octet-stream", ""));
-}
-
-std::string Event::getMimeType(std::string extension)
-{
-	for (std::map<std::string, std::string>::iterator it = m_mime_type.begin(); \
-		it != m_mime_type.end(); ++it)
-	{
-		if (it->second == extension)
-			return it->first;
-	}
-	return "";
-}
-
 void Event::changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, \
 	int16_t filter, uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
@@ -86,40 +62,54 @@ void Event::writeSocket(Client& client, std::vector<struct kevent>& change_list)
 	if (client.written == static_cast<ssize_t>(send_buffer.size())) //다쓰면 연결해제
 		client.status = DISCONNECT;
 	std::map<std::string, std::string> headers = client.request.getHeaders();
-	if (headers["Connection"] == "keep-alive")
-	{
-		changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 75, &client);
-		client.status = RECV_REQUEST;
-	}
+	
+	// ㅠㅠㅠㅠㅠㅠㅠ눈물좔좔
+	// if (headers["Connection"] == "keep-alive")
+	// {
+	// 	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
+	// 	changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 75, &client);
+	// 	changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
+	// 	client.status = RECV_REQUEST;
+	// }
 
 	std::cout << CYAN << "[response message]" << std::endl << &send_buffer[client.written - write_size] << RESET << std::endl;
 }
 
 void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 {
-	std::cout << "readFile()" << std::endl;
+    std::cout << "readFile()" << std::endl;
 
-	char buf[1024];
-	client.body_length = read(client.file_fd, buf, sizeof(buf));
-	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
-	close(client.file_fd);
-	if (client.body_length <= 0)
-		return handleError(client, change_list, "500");
-	buf[client.body_length] = '\0';
-	client.body = buf;
-	client.response.getBody(buf, client.body_length);
-	client.response.makeResponse();
+    const size_t BUFFER_SIZE = 4096;
+    std::vector<char> buffer(BUFFER_SIZE);
 
-	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-	client.status = SEND_RESPONSE;
+    ssize_t bytesRead;
+    std::vector<char> fileContent;
+    while ((bytesRead = read(client.file_fd, buffer.data(), BUFFER_SIZE)) > 0)
+    {
+        fileContent.insert(fileContent.end(), buffer.begin(), buffer.begin() + bytesRead);
+    }
+    close(client.file_fd);
+    if (bytesRead == -1)
+    {
+        return handleError(client, change_list, "500");
+    }
+
+    client.body = std::string(fileContent.begin(), fileContent.end());
+    client.response.getBody(fileContent.data(), fileContent.size());
+    client.response.makeResponse();
+    changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
+    client.status = SEND_RESPONSE;
 }
+
+
+
 
 void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "writeFile()" << std::endl;
 
 	// cgi를 거치지 않았을 때
-	if (client.server->findValue(client.m_location, "cgi_pass").size() == 0) 
+	if (client.server->findValue(client.m_location, "cgi_path").empty()) 
 	{
 		std::string str = "";
 		for (size_t i=3; i < client.request.getBody().size(); i++)
@@ -128,6 +118,10 @@ void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 		client.body_length = str.length();
 	}
 
+	// if (client.file)
+	// {
+	// 	write(client.file_fd, client.file, 1024);
+	// }
 	ssize_t write_size = write(client.file_fd, client.body.c_str(), client.body_length);
 	close(client.file_fd);
 	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);

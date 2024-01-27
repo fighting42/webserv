@@ -13,6 +13,7 @@ Client::Client(int client_socket, std::string client_ip)
 	ip = client_ip;
 	status = RECV_REQUEST;
 	written = 0;
+	file = NULL;
 	body_length = 0;
 	location_uri = "/";
 }

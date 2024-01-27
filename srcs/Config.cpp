@@ -13,6 +13,9 @@ std::vector<Server *>	Config::getServer() const { return v_server; }
 
 void	Config::removeCommentSpace()
 {
+	if (line.size() == 0)
+		return;
+	
 	size_t pos = line.find('#');
     if (pos != std::string::npos) 
         line = line.substr(0, pos);
