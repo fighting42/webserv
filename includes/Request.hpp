@@ -17,14 +17,14 @@ class Request
     std::string host;
 		std::map<std::string, std::string> headers;
     std::string status;
-    std::vector<char> buffer;
+    std::string buffer;
 	  size_t content_length;
 	  std::vector<char> body;
 	  size_t body_size;
     std::string query_str;
     bool chunked;
     bool body_done;
-    bool chunked_done;
+    bool parsing_done;
     
   public:
     Request();
