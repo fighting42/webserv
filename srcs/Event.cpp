@@ -82,6 +82,7 @@ void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 	char buf[1024];
 	client.body_length = read(client.file_fd, buf, sizeof(buf));
 	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
+		std::cout << client.file_fd << std::endl << buf << std::endl;
 	close(client.file_fd);
 	if (client.body_length <= 0)
 		return handleError(client, change_list, "500");
@@ -89,7 +90,6 @@ void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 	client.body = buf;
 	client.response.getBody(buf, client.body_length);
 	client.response.makeResponse();
-
 	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
 	client.status = SEND_RESPONSE;
 }

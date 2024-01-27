@@ -18,9 +18,16 @@ const std::vector<char> &Response::getSendBuffer() const { return send_buffer; }
 void Response::setBody(const std::vector<char> &obj) { body = obj; }
 void Response::setStatus(const std::string &obj) { status = obj; }
 
-void Response::setContentType(const std::string &resource) {
-	std::string file_type = resource.substr(resource.find('.'));
-	content_type = Event::getMimeType(file_type);
+void Response::setContentType(const std::string &resource) 
+{
+    size_t dotPosition = resource.find('.');
+    if (dotPosition != std::string::npos) 
+	{
+        std::string file_type = resource.substr(dotPosition);
+        content_type = Event::getMimeType(file_type);
+    }
+	else
+        content_type = "application/octet-stream";
 }
 
 void Response::print() {
