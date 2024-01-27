@@ -21,10 +21,12 @@ void Response::setStatus(const std::string &obj) { status = obj; }
 void Response::setContentType(const std::string &resource) 
 {
     size_t dotPosition = resource.find('.');
-    if (dotPosition != std::string::npos) 
+    if (dotPosition != std::string::npos)
 	{
         std::string file_type = resource.substr(dotPosition);
         content_type = Event::getMimeType(file_type);
+		if (content_type == "")
+			content_type = "application/octet-stream";
     }
 	else
         content_type = "application/octet-stream";
