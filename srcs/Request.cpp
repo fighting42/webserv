@@ -1,7 +1,7 @@
 #include "../includes/Request.hpp"
 
 Request::Request()
-    :method("default"), uri("default"), version("default"), status("200"), query_str(""), chunked(false), body_done(false), chunked_done(false)
+    :method("default"), uri("default"), version("default"), status("200"), buffer(""), query_str(""), chunked(false), body_done(false), parsing_done(false)
 {
     this->body.clear();
     this->buffer.clear();
@@ -44,71 +44,73 @@ std::vector<std::string> Request::ReqSplit(std::string input, char delimiter)
 
 void Request::controlChunked(size_t found)
 {
-    ssize_t size, chk_size;
+    ssize_t size, chk_size, body_len=0;
     std::size_t  found_RN, found_C, i=0;
     std::string line_size, line_contents;
     std::vector<char> tmp;
-
-    if (this->req_msg.find("0\r\n\r\n", found+1) != std::string::npos) //이후 확인 필요
-        this->chunked_done = true;
+    
+    tmp.clear();
     found_RN = this->req_msg.find("\r\n", found+1);
     line_size = this->req_msg.substr(found+1, found_RN-(found+1));
     size = hexToDec(line_size);
+    body_len += size;
     while(!this->body_done) {
         chk_size = 0;
-        tmp.clear();
-        if (found >= this->req_msg.size())
-            break;
+        // if (found >= this->req_msg.size())
+        //     break;
         if (i > 0) {
             found_RN = this->req_msg.find("\r\n", found+2);
             line_size = this->req_msg.substr(found+2, found_RN-(found+2));
             size = hexToDec(line_size);
-            if (this->req_msg.find("\r\n\r\n") == found_RN)
+            body_len += size;
+            if (found_RN == this->req_msg.size()-4) {
                 this->body_done = true;
+                // std::cout << "found_RN == " << found_RN << std::endl;
+            }
         }
         // std::cout << "줄 길이여야 하는 것 " << line_size << std::endl;
         while(chk_size < size) {
             found_C = this->req_msg.find("\r\n", found_RN + 2);
+            if (found_C == std::string::npos)
+                break;
             line_contents = this->req_msg.substr(found_RN + 2, found_C-(found_RN+2));
             chk_size += (line_contents.size());
             // std::cout << "누적 길이 chk_size: " << chk_size << "한 줄 길이  " << line_contents.size() << std::endl; //삭제
-            if (chk_size + 2 <= size) {
+            if (chk_size == size) { // 한 줄에 크기에 맞게 잘 들어왔을 때
                 for (size_t i = 0; i < line_contents.size() ; i++)
                     tmp.push_back(line_contents[i]);
+                break;
+            }
+            else if (chk_size + 2 <= size) { // 한 줄에 다 안들어 왔을 때
+                for (size_t idx = 0; idx < line_contents.size() ; idx++)
+                    tmp.push_back(line_contents[idx]);
                 tmp.push_back('\r');
                 tmp.push_back('\n');
+                // std::cout << "한 줄에 다 안들어 왔음" << std::endl;
                 // for (std::vector<char>::iterator it = tmp.begin(); it != tmp.end() ; ++it)
                 //     std::cout << *it;
                 // std::cout << '\n';
                 chk_size += 2;
             }
-            else  if (chk_size == size) {
-                for (size_t i = 0; i < line_contents.size() ; i++)
-                    tmp.push_back(line_contents[i]);
-                break;
-            }
-            else 
+            else // 에러
                 break;
             found_RN = found_C;
         }
-        std::cout << "최종 tmp size " << tmp.size() << std::endl; //삭제
-        if (tmp.size() != static_cast<size_t>(size) || size == -1) { //size맞지 않을 때
-            this->buffer.clear();
+        // std::cout << "최종 tmp size " << tmp.size() << "size " << size << std::endl; //삭제
+        if (tmp.size() != static_cast<size_t>(body_len) || size == -1) { //size맞지 않을 때
+            // std::cout << "최종 tmp :: " << std::endl;
+            // for (std::vector<char>::iterator it = tmp.begin(); it != tmp.end() ; ++it)
+            //     std::cout << *it;
             this->status = "400";
             return ;
         }
-        for (size_t i = 0; i < tmp.size() ; i++)
-            this->buffer.push_back(tmp[i]);
         found = found_C;
         i++;
     }
-    if (this->chunked_done)
-    {
-        this->chunked = false;
-        for (size_t i = 0; i < this->buffer.size() ; i++)
-                this->body.push_back(this->buffer[i]);
-        this->body_size = this->body.size();
-    }
+    this->chunked = false;
+    for (size_t idx = 0; idx < tmp.size() ; idx++)
+            this->body.push_back(tmp[idx]);
+    this->body_size = this->body.size();
     return ;
 }
 
@@ -155,12 +157,15 @@ void Request::ReqParsing(std::string msg)
 {
     std::size_t found;
 
-    found = LineParsing(msg);
-    if (this->chunked) {
-        controlChunked(found);
-        if (this->chunked == false)
-            this->chunked_done = false;
+    if (msg.find("\r\n\r\n") == std::string::npos) {
+        this->buffer.append(msg);
+        return ;
     }
+    else
+        this->buffer.append(msg);
+    found = LineParsing(this->buffer);
+    if (this->chunked)
+        controlChunked(found);
     else {
         if (found != this->req_msg.size() && found < this->req_msg.size()) {
             std::string buf = this->req_msg.substr(found, this->req_msg.size());
@@ -180,6 +185,7 @@ void Request::ReqParsing(std::string msg)
         if (it == this->headers.end())
             this->status = "411";
     }
+    this->parsing_done = true;
     return ;
 }
 
