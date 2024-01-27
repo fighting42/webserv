@@ -77,21 +77,32 @@ void Event::writeSocket(Client& client, std::vector<struct kevent>& change_list)
 
 void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 {
-	std::cout << "readFile()" << std::endl;
+    std::cout << "readFile()" << std::endl;
 
-	char buf[1024];
-	client.body_length = read(client.file_fd, buf, sizeof(buf));
-	changeEvents(change_list, client.file_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
-	close(client.file_fd);
-	if (client.body_length <= 0)
-		return handleError(client, change_list, "500");
-	buf[client.body_length] = '\0';
-	client.body = buf;
-	client.response.getBody(buf, client.body_length);
-	client.response.makeResponse();
-	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-	client.status = SEND_RESPONSE;
+    const size_t BUFFER_SIZE = 4096;
+    std::vector<char> buffer(BUFFER_SIZE);
+
+    ssize_t bytesRead;
+    std::vector<char> fileContent;
+    while ((bytesRead = read(client.file_fd, buffer.data(), BUFFER_SIZE)) > 0)
+    {
+        fileContent.insert(fileContent.end(), buffer.begin(), buffer.begin() + bytesRead);
+    }
+    close(client.file_fd);
+    if (bytesRead == -1)
+    {
+        return handleError(client, change_list, "500");
+    }
+
+    client.body = std::string(fileContent.begin(), fileContent.end());
+    client.response.getBody(fileContent.data(), fileContent.size());
+    client.response.makeResponse();
+    changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
+    client.status = SEND_RESPONSE;
 }
+
+
+
 
 void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 {
