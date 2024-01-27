@@ -108,10 +108,10 @@ void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 		client.body_length = str.length();
 	}
 
-	if (client.file)
-	{
-		write(client.file_fd, client.file, 1024);
-	}
+	// if (client.file)
+	// {
+	// 	write(client.file_fd, client.file, 1024);
+	// }
 	ssize_t write_size = write(client.file_fd, client.body.c_str(), client.body_length);
 	close(client.file_fd);
 	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
