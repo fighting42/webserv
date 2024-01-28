@@ -113,7 +113,6 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 		return;
 	}
 
-	if (!client.file) std::cout << "file!" << std::endl;
 	// body가 file이면 업로드 구현 -> .data()
 	// application/x-www-form-urlencoded ??
 

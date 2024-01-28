@@ -37,7 +37,6 @@ class Client
         ssize_t written; //reponse의 적힌 사이즈변수
         
         std::string body;
-        char* file;
         int body_length;
         
         Server *server;
@@ -46,6 +45,7 @@ class Client
 
         Client(int client_socket, std::string client_ip);
         ~Client();
+        void init();
 };
 
 #endif

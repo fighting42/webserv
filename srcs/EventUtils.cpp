@@ -11,7 +11,7 @@ void Event::setMimeType()
 	m_mime_type.insert(std::pair<std::string, std::string>("text/plain", ".txt"));
 	m_mime_type.insert(std::pair<std::string, std::string>("image/png", ".png"));
 	m_mime_type.insert(std::pair<std::string, std::string>("multipart/form-data", ".binary"));
-	m_mime_type.insert(std::pair<std::string, std::string>("application/octet-stream", ""));
+	m_mime_type.insert(std::pair<std::string, std::string>("application/octet-stream", "")); // .bin ??
 }
 
 std::string Event::getMimeType(std::string extension)

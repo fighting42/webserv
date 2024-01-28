@@ -63,16 +63,15 @@ void Event::writeSocket(Client& client, std::vector<struct kevent>& change_list)
 		client.status = DISCONNECT;
 	std::map<std::string, std::string> headers = client.request.getHeaders();
 	
-	// ㅠㅠㅠㅠㅠㅠㅠ눈물좔좔
-	// if (headers["Connection"] == "keep-alive")
-	// {
-	// 	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
-	// 	changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 75, &client);
-	// 	changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
-	// 	client.status = RECV_REQUEST;
-	// }
-
 	std::cout << CYAN << "[response message]" << std::endl << &send_buffer[client.written - write_size] << RESET << std::endl;
+	
+	if (headers["Connection"] != "close")
+	{
+		changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
+		changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 75, &client);
+		changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, &client);
+		client.init();
+	}
 }
 
 void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
@@ -100,9 +99,6 @@ void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
     changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
     client.status = SEND_RESPONSE;
 }
-
-
-
 
 void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 {
