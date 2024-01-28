@@ -73,6 +73,7 @@ std::vector<char> Response::getStatusMsg() const
 		m_status["200"] = "OK";
 		m_status["201"] = "Created";
 		m_status["204"] = "No Content";
+		m_status["301"] = "Moved Permanently";
 		m_status["400"] = "Bad Request";
 		m_status["404"] = "Not Found";
 		m_status["405"] = "Method Not Allowed";

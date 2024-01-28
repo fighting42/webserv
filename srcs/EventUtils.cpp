@@ -104,19 +104,11 @@ char** Event::setEnvp(Client& client, std::string cgi_path)
 	v_env.push_back("SERVER_PORT=" + ss.str());
 	v_env.push_back("REMOTE_ADDR=" + client.ip);
 
-	v_env.push_back("SCRIPT_NAME="); // 모르게따
 	std::string path_info = client.request.getUri().substr(client.location_uri.length());
-	// if (client.request.getUri().length() == client.location_uri.length())
-	// 	v_env.push_back("PATH_INFO=/");
-	// else
-	// 	v_env.push_back("PATH_INFO=" + path_info);
-	//이거 물어보기
-    if (path_info.empty()|| path_info[0] != '/') {
-        // 경로 정보가 비어있거나 '/'로 시작하지 않으면 수정이 필요할 수 있습니다.
-        std::cerr << "Invalid PATH_INFO: " << path_info << std::endl;
-        //return handleError(client, change_list, "500");
-    }
-	v_env.push_back("PATH_INFO=/");
+	if (client.request.getUri().length() == client.location_uri.length())
+		v_env.push_back("PATH_INFO=/");
+	else
+		v_env.push_back("PATH_INFO=" + path_info);
 
 	v_env.push_back("PATH_TRANSLATED=" + cgi_path + path_info);
 
@@ -128,12 +120,6 @@ char** Event::setEnvp(Client& client, std::string cgi_path)
 	{
 		v_env.push_back("CONTENT_LENGTH=" + m_headers["Content-Length"]);
 		v_env.push_back("CONTENT_TYPE=" + m_headers["Content-Type"]);
-	}
-
-	// HTTP Headers 설정
-	for (std::map<std::string, std::string>::const_iterator it = m_headers.begin(); it != m_headers.end(); ++it) 
-	{
-		v_env.push_back("HTTP_" + it->first + "=" + it->second);
 	}
 
 	char** env = new char*[v_env.size() + 1];
