@@ -1,27 +1,10 @@
 #include "../includes/Request.hpp"
 
 Request::Request()
-    :method("default"), uri("default"), version("default"), status("200"), buffer(""), query_str(""), chunked(false), body_done(false), parsing_done(false)
+    :method("default"), uri("default"), version("default"), host("default"), status("200"), buffer(""), query_str(""), chunked(false), body_done(false), parsing_done(false)
 {
     this->body.clear();
     this->buffer.clear();
-}
-
-void  Request::init()
-{
-    std::cout << "init!!!!!!\n";
-    this->body.clear();
-    this->buffer.clear();
-    this->req_msg.clear();
-    method = "default";
-    uri = "default";
-    version = "default";
-    status = "200";
-    buffer = "";
-    query_str = "";
-    chunked = false;
-    body_done = false;
-    parsing_done = false;
 }
 
 const std::string &Request::getMethod() const { return this->method; }
@@ -188,9 +171,8 @@ void Request::ReqParsing(std::string msg)
         this->body_size = this->body.size();
     }
     if (this->method == "POST") {
-        if (this->body_size == 0) {
+        if (this->body_size == 0)
             this->status = "411";
-        }
         std::map<std::string, std::string>::iterator it;
         for (it = this->headers.begin(); it != this->headers.end(); it++) {
             if (it->first == "Content-Length")

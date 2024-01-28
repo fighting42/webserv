@@ -38,6 +38,7 @@ class Request
     const std::string& getQueryStr() const;
     const std::vector<char>& getBody() const;
 	  const std::map<std::string, std::string>& getHeaders() const;
+    void setUri(std::string newUri);
     void PrintRequest();
     void ReqParsing(std::string msg);
     std::size_t LineParsing(std::string msg);

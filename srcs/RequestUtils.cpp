@@ -1,5 +1,23 @@
 #include "../includes/Request.hpp"
 
+void  Request::init()
+{
+    this->body.clear();
+    this->buffer.clear();
+    this->req_msg.clear();
+    this->method = "default";
+    this->uri = "default";
+    this->version = "default";
+    this->host = "default";
+    this->status = "200";
+    this->headers.clear();
+    this->buffer = "";
+    this->query_str = "";
+    this->chunked = false;
+    this->body_done = false;
+    this->parsing_done = false;
+}
+
 void Request::PrintRequest()
 {
     std::cout << "\033[1;94m" << std::endl; // blue
@@ -18,6 +36,12 @@ void Request::PrintRequest()
         std::cout << *it;
     }
     std::cout << "\033[0m" << std::endl; // reset
+}
+
+void Request::setUri(std::string newUri)
+{
+    this->uri = newUri;
+    return ;
 }
 
 std::string Request::removeWhiteSpace(std::string str)
