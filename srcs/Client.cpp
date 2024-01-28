@@ -31,6 +31,6 @@ void Client::init()
 	body_length = 0;
 	location_uri = "/";
 	m_location.clear();
-	request = Request();
+	request.init();
 	response = Response();
 }

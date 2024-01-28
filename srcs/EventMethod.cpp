@@ -3,7 +3,7 @@
 
 void    Event::checkMethod(Client& client, std::vector<struct kevent>& change_list)
 {
-	if (client.status != RECV_REQUEST || client.request.getChunked())
+	if (client.status != RECV_REQUEST || !client.request.getParsingStatus())
 		return;
 
 	findLocation(client);

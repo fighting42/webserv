@@ -7,11 +7,28 @@ Request::Request()
     this->buffer.clear();
 }
 
+void  Request::init()
+{
+    std::cout << "init!!!!!!\n";
+    this->body.clear();
+    this->buffer.clear();
+    this->req_msg.clear();
+    method = "default";
+    uri = "default";
+    version = "default";
+    status = "200";
+    buffer = "";
+    query_str = "";
+    chunked = false;
+    body_done = false;
+    parsing_done = false;
+}
+
 const std::string &Request::getMethod() const { return this->method; }
 const std::string &Request::getUri() const { return this->uri; }
 const std::string &Request::getHost() const { return this->host; }
 const std::string &Request::getStatus() const { return this->status; }
-const bool &Request::getChunked() const { return this->chunked; }
+const bool &Request::getParsingStatus() const { return this->parsing_done; }
 const std::vector<char> &Request::getBody() const { return this->body; }
 const std::string &Request::getQueryStr() const { return this->query_str; }
 const std::map<std::string, std::string> &Request::getHeaders() const { return this->headers; }
@@ -54,7 +71,7 @@ void Request::controlChunked(size_t found)
     line_size = this->req_msg.substr(found+1, found_RN-(found+1));
     size = hexToDec(line_size);
     body_len += size;
-    while(!this->body_done) {
+    while(!this->body_done) { //contents_length가 없을 경우도 있음, 411 코드
         chk_size = 0;
         if (found >= this->req_msg.size())
             break;
@@ -116,10 +133,12 @@ std::size_t Request::LineParsing(std::string msg)
     std::size_t found = this->req_msg.find("\n");
     std::string first = this->req_msg.substr(0, found);
     std::vector<std::string> firstline;
+    std::cout << "msg\n" << msg << std::endl;
     firstline = ReqSplit(first, ' ');
     this->method = firstline[0];
     if (this->method != "GET" && this->method != "POST" && this->method != "DELETE")
         this->status = "405";
+    std::cout << "method\n" << this->method << std::endl;
     this->uri = checkQuery(firstline[1]);
     // if (this->uri != "HTTP/1.1")
     //     this->status = "404";
@@ -153,12 +172,10 @@ void Request::ReqParsing(std::string msg)
 {
     std::size_t found;
 
-    if (msg.find("\r\n\r\n") == std::string::npos) {
-        this->buffer.append(msg);
+    this->buffer.append(msg);
+    if (this->buffer.find("\r\n\r\n") == std::string::npos)
         return ;
-    }
-    else
-        this->buffer.append(msg);
+    std::cout << "잘 찾고있음 " << std::endl;
     found = LineParsing(this->buffer);
     if (this->chunked)
         controlChunked(found);
@@ -171,6 +188,9 @@ void Request::ReqParsing(std::string msg)
         this->body_size = this->body.size();
     }
     if (this->method == "POST") {
+        if (this->body_size == 0) {
+            this->status = "411";
+        }
         std::map<std::string, std::string>::iterator it;
         for (it = this->headers.begin(); it != this->headers.end(); it++) {
             if (it->first == "Content-Length")
@@ -181,6 +201,7 @@ void Request::ReqParsing(std::string msg)
         if (it == this->headers.end())
             this->status = "411";
     }
+    std::cout << "parsing에서 확인해보자 " << this->parsing_done << std::endl;
     this->parsing_done = true;
     return ;
 }
@@ -189,8 +210,8 @@ void Request::ReqParsing(std::string msg)
 // {
 //     Request Req;
 
-//     std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\nF\r\nin\r\n\r\nchunks.\r\n0\r\n\r\n";
-//     // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\n2\r\nin\r\n7\r\nchunks.\r\n0\r\n\r\n";
+    // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\nF\r\nin\r\n\r\nchunks.\r\n0\r\n\r\n";
+    // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\n2\r\nin\r\n7\r\nchunks.\r\n0\r\n\r\n";
 //     Req.ReqParsing(msg);
 //     Req.PrintRequest();
 //     return (0);

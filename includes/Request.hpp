@@ -29,11 +29,12 @@ class Request
   public:
     Request();
     ~Request();
+    void  init();
     const std::string& getMethod() const;
 	  const std::string& getUri() const;
 	  const std::string& getHost() const;
 	  const std::string& getStatus() const;
-    const bool& getChunked() const;
+    const bool& getParsingStatus() const;
     const std::string& getQueryStr() const;
     const std::vector<char>& getBody() const;
 	  const std::map<std::string, std::string>& getHeaders() const;

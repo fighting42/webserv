@@ -36,15 +36,17 @@ void Event::readSocket(Client& client, std::vector<struct kevent>& change_list)
 		return handleError(client, change_list, "500");
 	}
 	buf[client.body_length] = '\0';
+	std::cout <<"buf\n" << buf << std::endl;
 	client.request.ReqParsing(buf);
 
-	if (client.request.getChunked())
+	if (!client.request.getParsingStatus())
 		changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 60, &client);
-	if (!client.request.getChunked() || client.request.getStatus() != "200")
+	if (client.request.getParsingStatus() || client.request.getStatus() != "200")
 		changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
 	if (client.request.getStatus() != "200")
 		handleError(client, change_list, client.request.getStatus());
 
+	std::cout << "parsing status: "  << client.request.getParsingStatus() << std::endl;
 	std::cout << BLUE << "[request message]" << std::endl << buf << RESET << std::endl;
 }
 
