@@ -56,8 +56,8 @@ void Request::controlChunked(size_t found)
     body_len += size;
     while(!this->body_done) {
         chk_size = 0;
-        // if (found >= this->req_msg.size())
-        //     break;
+        if (found >= this->req_msg.size())
+            break;
         if (i > 0) {
             found_RN = this->req_msg.find("\r\n", found+2);
             line_size = this->req_msg.substr(found+2, found_RN-(found+2));
@@ -65,17 +65,14 @@ void Request::controlChunked(size_t found)
             body_len += size;
             if (found_RN == this->req_msg.size()-4) {
                 this->body_done = true;
-                // std::cout << "found_RN == " << found_RN << std::endl;
             }
         }
-        // std::cout << "줄 길이여야 하는 것 " << line_size << std::endl;
         while(chk_size < size) {
             found_C = this->req_msg.find("\r\n", found_RN + 2);
             if (found_C == std::string::npos)
                 break;
             line_contents = this->req_msg.substr(found_RN + 2, found_C-(found_RN+2));
             chk_size += (line_contents.size());
-            // std::cout << "누적 길이 chk_size: " << chk_size << "한 줄 길이  " << line_contents.size() << std::endl; //삭제
             if (chk_size == size) { // 한 줄에 크기에 맞게 잘 들어왔을 때
                 for (size_t i = 0; i < line_contents.size() ; i++)
                     tmp.push_back(line_contents[i]);
@@ -86,7 +83,6 @@ void Request::controlChunked(size_t found)
                     tmp.push_back(line_contents[idx]);
                 tmp.push_back('\r');
                 tmp.push_back('\n');
-                // std::cout << "한 줄에 다 안들어 왔음" << std::endl;
                 // for (std::vector<char>::iterator it = tmp.begin(); it != tmp.end() ; ++it)
                 //     std::cout << *it;
                 // std::cout << '\n';
@@ -193,7 +189,7 @@ void Request::ReqParsing(std::string msg)
 // {
 //     Request Req;
 
-//     std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\nE\r\nin\r\n\r\nchunks.\r\n0\r\n\r\n";
+//     std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\nF\r\nin\r\n\r\nchunks.\r\n0\r\n\r\n";
 //     // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\n2\r\nin\r\n7\r\nchunks.\r\n0\r\n\r\n";
 //     Req.ReqParsing(msg);
 //     Req.PrintRequest();
