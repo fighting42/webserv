@@ -16,6 +16,7 @@
 #define RESET   "\033[0m"
 #define BLUE    "\033[34m"
 #define CYAN    "\033[36m"
+#define BUFFER_SIZE 1024
 
 extern std::map<std::string, std::string> m_mime_type;
 extern fd_set server_fds;
@@ -45,7 +46,6 @@ class Event
 		static void	handlePost(Client& client, std::vector<struct kevent>& change_list);
 		static void	handleCgi(Client& client, std::vector<struct kevent>& change_list);
 		static void	handleError(Client& client, std::vector<struct kevent>& change_list, const std::string &error_code);
-		static void handleAutoindex(Client& client, std::vector<struct kevent>& change_list, std::string uri);
 
 		static void	setMimeType();
 		static std::string	getMimeType(std::string extension);
@@ -54,6 +54,7 @@ class Event
 		static void	execCgi(Client& client, std::vector<struct kevent>& change_list);
 		static char**	setEnvp(Client& client, std::string cgi_path);
 		static void	findLocation(Client& client);
+		static void handleAutoindex(Client& client, std::vector<struct kevent>& change_list, std::string uri);
 		static void	checkConfig(Client& client, std::vector<struct kevent>& change_list);
 };
 

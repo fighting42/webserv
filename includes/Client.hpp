@@ -8,6 +8,7 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Server.hpp"
+#include "Event.hpp"
 
 enum Status // 다음에 할 작업으로 status 바꿔주는겁니다요
 {

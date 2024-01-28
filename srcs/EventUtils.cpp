@@ -44,6 +44,23 @@ void	Event::findLocation(Client& client)
 	}
 	if (client.m_location.size() == 0)
 		client.m_location = client.server->getLocation()["/"];
+	
+	std::vector<std::string> v_redirect = client.server->findValue(client.m_location, "redirect");
+	if (!v_redirect.empty())
+	{
+		std::string new_uri = v_redirect[0];
+		new_uri += client.request.getUri().substr(client.location_uri.length());
+		if (new_uri.empty())
+			new_uri = "/";
+		else if (new_uri[0] != '/')
+			new_uri = "/" + new_uri;
+
+		// std::cout << "redirect uri: " << new_uri << std::endl;
+		findLocation(client); // 변경된 uri의 로케이션 블록 저장
+		// client.request.setUri(new_uri); // 필요함
+		// client.response.setStatus("301");
+		// m_status["301"] = "Moved Permanently"; // 추가 필요
+	}
 }
 
 std::string	Event::getRootpath(Client& client)

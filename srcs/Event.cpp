@@ -28,8 +28,8 @@ void Event::readSocket(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "readSocket()" << std::endl;
 
-	char buf[1024];
-	client.body_length = read(client.socket_fd, buf, 1024);
+	char buf[BUFFER_SIZE];
+	client.body_length = read(client.socket_fd, buf, BUFFER_SIZE);
 	if (client.body_length <= 0)
 	{
 		changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
@@ -61,11 +61,11 @@ void Event::writeSocket(Client& client, std::vector<struct kevent>& change_list)
 
 	if (client.written == static_cast<ssize_t>(send_buffer.size())) //다쓰면 연결해제
 		client.status = DISCONNECT;
-	std::map<std::string, std::string> headers = client.request.getHeaders();
 	
 	std::cout << CYAN << "[response message]" << std::endl << &send_buffer[client.written - write_size] << RESET << std::endl;
 	
-	if (headers["Connection"] != "close")
+	std::map<std::string, std::string> m_headers = client.request.getHeaders();
+	if (m_headers["Connection"] != "close" && client.status == DISCONNECT)
 	{
 		changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
 		changeEvents(change_list, client.socket_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, NOTE_SECONDS, 75, &client);
@@ -78,20 +78,17 @@ void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 {
     std::cout << "readFile()" << std::endl;
 
-    const size_t BUFFER_SIZE = 4096;
     std::vector<char> buffer(BUFFER_SIZE);
-
     ssize_t bytesRead;
     std::vector<char> fileContent;
+	// 수정필요
     while ((bytesRead = read(client.file_fd, buffer.data(), BUFFER_SIZE)) > 0)
     {
         fileContent.insert(fileContent.end(), buffer.begin(), buffer.begin() + bytesRead);
     }
     close(client.file_fd);
     if (bytesRead == -1)
-    {
         return handleError(client, change_list, "500");
-    }
 
     client.body = std::string(fileContent.begin(), fileContent.end());
     client.response.getBody(fileContent.data(), fileContent.size());
@@ -114,10 +111,6 @@ void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
 		client.body_length = str.length();
 	}
 
-	// if (client.file)
-	// {
-	// 	write(client.file_fd, client.file, 1024);
-	// }
 	ssize_t write_size = write(client.file_fd, client.body.c_str(), client.body_length);
 	close(client.file_fd);
 	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
@@ -137,9 +130,9 @@ void	Event::readPipe(Client& client, std::vector<struct kevent>& change_list)
 	std::cout << "readPipe()" << std::endl;
 
 	waitpid(client.pid, NULL, 0);
-	
-	char buf[1024];
-	client.body_length = read(client.pipe_fd[0], buf, 1024);
+
+	char buf[BUFFER_SIZE];
+	client.body_length = read(client.pipe_fd[0], buf, BUFFER_SIZE);
 	close(client.pipe_fd[0]);
 	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
 	if (client.body_length <= 0)
