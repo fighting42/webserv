@@ -55,7 +55,7 @@ void Event::writeSocket(Client& client, std::vector<struct kevent>& change_list)
 	std::cout << "writeSocket()" << std::endl;
 
 	const std::vector<char>& send_buffer = client.response.getSendBuffer();
-	ssize_t write_size = send_buffer.size() - client.written > 1024 ? 1024 : send_buffer.size() - client.written;
+	ssize_t write_size = send_buffer.size() - client.written > BUFFER_SIZE ? BUFFER_SIZE : send_buffer.size() - client.written;
 	write_size = write(client.socket_fd, &send_buffer[client.written], write_size);
 	if (write_size <= 0)
 		return handleError(client, change_list, "500");
@@ -79,24 +79,30 @@ void Event::writeSocket(Client& client, std::vector<struct kevent>& change_list)
 void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
 {
     std::cout << "readFile()" << std::endl;
+	
+	// 파일 크기 확인
+    off_t fileSize = lseek(client.file_fd, 0, SEEK_END);
+    lseek(client.file_fd, 0, SEEK_SET);
 
-    std::vector<char> buffer(BUFFER_SIZE);
-    ssize_t bytesRead;
-    std::vector<char> fileContent;
-	// 수정필요
-    while ((bytesRead = read(client.file_fd, buffer.data(), BUFFER_SIZE)) > 0)
+    // 적절한 크기의 버퍼 할당
+    std::vector<char> fileContent(fileSize);
+
+    ssize_t bytesRead = read(client.file_fd, fileContent.data(), fileSize);
+    if (bytesRead == fileSize)
     {
-        fileContent.insert(fileContent.end(), buffer.begin(), buffer.begin() + bytesRead);
+        close(client.file_fd);
+        // 읽은 파일 데이터 처리
+        client.body = std::string(fileContent.begin(), fileContent.end());
+        client.response.getBody(fileContent.data(), fileContent.size());
+        client.response.makeResponse();
+        changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
+        client.status = SEND_RESPONSE;
     }
-    close(client.file_fd);
-    if (bytesRead == -1)
+    else if (bytesRead == -1)
+	{
+        close(client.file_fd);
         return handleError(client, change_list, "500");
-
-    client.body = std::string(fileContent.begin(), fileContent.end());
-    client.response.getBody(fileContent.data(), fileContent.size());
-    client.response.makeResponse();
-    changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-    client.status = SEND_RESPONSE;
+	}
 }
 
 void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
@@ -133,24 +139,40 @@ void	Event::readPipe(Client& client, std::vector<struct kevent>& change_list)
 
 	waitpid(client.pid, NULL, 0);
 
-	char buf[BUFFER_SIZE];
-	client.body_length = read(client.pipe_fd[0], buf, BUFFER_SIZE);
+	// 파일 크기 확인
+	off_t fileSize = lseek(client.pipe_fd[0], 0, SEEK_END);
+	lseek(client.pipe_fd[0], 0, SEEK_SET);
+
+	// 적절한 크기의 버퍼 할당
+	std::vector<char> fileContent(fileSize);
+
+	ssize_t bytesRead = read(client.pipe_fd[0], fileContent.data(), fileSize);
 	close(client.pipe_fd[0]);
 	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
-	if (client.body_length <= 0)
-		return handleError(client, change_list, "500");
-	buf[client.body_length] = '\0';
-	client.body = buf;
 
-	if (client.request.getMethod() == "GET")
+	if (bytesRead == fileSize)
 	{
-		client.response.getBody(buf, client.body_length);
-		client.response.makeResponse();
-		changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-		client.status = SEND_RESPONSE;
+		// 읽은 파일 데이터 처리
+		client.body = std::string(fileContent.begin(), fileContent.end());
+		client.body_length = bytesRead;
+
+		if (client.request.getMethod() == "GET")
+		{
+			client.response.getBody(fileContent.data(), fileContent.size());
+			client.response.makeResponse();
+			changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
+			client.status = SEND_RESPONSE;
+		}
+		else if (client.request.getMethod() == "POST")
+		{
+			handlePost(client, change_list);
+		}
 	}
-	else if (client.request.getMethod() == "POST")
-		handlePost(client, change_list);
+	else if (bytesRead == -1)
+	{
+		return handleError(client, change_list, "500");
+	}
+
 }
 
 void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
