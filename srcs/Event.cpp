@@ -137,24 +137,40 @@ void	Event::readPipe(Client& client, std::vector<struct kevent>& change_list)
 
 	waitpid(client.pid, NULL, 0);
 
-	char buf[BUFFER_SIZE];
-	client.body_length = read(client.pipe_fd[0], buf, BUFFER_SIZE);
+	// 파일 크기 확인
+	off_t fileSize = lseek(client.pipe_fd[0], 0, SEEK_END);
+	lseek(client.pipe_fd[0], 0, SEEK_SET);
+
+	// 적절한 크기의 버퍼 할당
+	std::vector<char> fileContent(fileSize);
+
+	ssize_t bytesRead = read(client.pipe_fd[0], fileContent.data(), fileSize);
 	close(client.pipe_fd[0]);
 	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
-	if (client.body_length <= 0)
-		return handleError(client, change_list, "500");
-	buf[client.body_length] = '\0';
-	client.body = buf;
 
-	if (client.request.getMethod() == "GET")
+	if (bytesRead == fileSize)
 	{
-		client.response.getBody(buf, client.body_length);
-		client.response.makeResponse();
-		changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-		client.status = SEND_RESPONSE;
+		// 읽은 파일 데이터 처리
+		client.body = std::string(fileContent.begin(), fileContent.end());
+		client.body_length = bytesRead;
+
+		if (client.request.getMethod() == "GET")
+		{
+			client.response.getBody(fileContent.data(), fileContent.size());
+			client.response.makeResponse();
+			changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
+			client.status = SEND_RESPONSE;
+		}
+		else if (client.request.getMethod() == "POST")
+		{
+			handlePost(client, change_list);
+		}
 	}
-	else if (client.request.getMethod() == "POST")
-		handlePost(client, change_list);
+	else if (bytesRead == -1)
+	{
+		return handleError(client, change_list, "500");
+	}
+
 }
 
 void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
