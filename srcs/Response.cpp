@@ -78,6 +78,7 @@ std::vector<char> Response::getStatusMsg() const
 		m_status["404"] = "Not Found";
 		m_status["405"] = "Method Not Allowed";
 		m_status["413"] = "Payload Too Large";
+		m_status["415"] = "Unsupported Media Type";
 		m_status["500"] = "Internal Server Error";
 	}
 

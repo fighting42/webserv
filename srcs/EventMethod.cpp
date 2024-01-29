@@ -99,6 +99,8 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 	std::string filename = buf; // 현재날짜시간 + 실제 파일 이름 있으면 추가
 	std::string extension = m_mime_type[m_headers["Content-Type"]];
 
+	if (extension.size() <= 0)
+		return handleError(client, change_list, "415");
 	client.file_fd = open((path + filename + extension).c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0777);
 	if (client.file_fd == -1)
 		return handleError(client, change_list, "500");
