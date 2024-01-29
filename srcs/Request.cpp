@@ -1,7 +1,7 @@
 #include "../includes/Request.hpp"
 
 Request::Request()
-    :method("default"), uri("default"), version("default"), host("default"), status("200"), buffer(""), query_str(""), chunked(false), body_done(false), parsing_done(false)
+    :method("default"), uri("default"), version("default"), host("default"), status("200"), buffer(""), query_str(""), pstatus(FIRST), chunked(false)
 {
     this->body.clear();
     this->buffer.clear();
@@ -11,7 +11,7 @@ const std::string &Request::getMethod() const { return this->method; }
 const std::string &Request::getUri() const { return this->uri; }
 const std::string &Request::getHost() const { return this->host; }
 const std::string &Request::getStatus() const { return this->status; }
-const bool &Request::getParsingStatus() const { return this->parsing_done; }
+const pStatus &Request::getParsingStatus() const { return this->pstatus; }
 const std::vector<char> &Request::getBody() const { return this->body; }
 const std::string &Request::getQueryStr() const { return this->query_str; }
 const std::map<std::string, std::string> &Request::getHeaders() const { return this->headers; }
@@ -54,7 +54,7 @@ void Request::controlChunked(size_t found)
     line_size = this->req_msg.substr(found+1, found_RN-(found+1));
     size = hexToDec(line_size);
     body_len += size;
-    while(!this->body_done) { //contents_length가 없을 경우도 있음, 411 코드
+    while(this->pstatus == BODY) { //contents_length가 없을 경우도 있음, 411 코드
         chk_size = 0;
         if (found >= this->req_msg.size())
             break;
@@ -64,7 +64,7 @@ void Request::controlChunked(size_t found)
             size = hexToDec(line_size);
             body_len += size;
             if (found_RN == this->req_msg.size()-4) {
-                this->body_done = true;
+                this->pstatus = BODY_DONE;
             }
         }
         while(chk_size < size) {
@@ -129,6 +129,7 @@ std::size_t Request::LineParsing(std::string msg)
     std::size_t found_tmp;
     std::string line;
     std::vector<std::string> vline;
+    this->pstatus = HEADER;
     while(1)
     {
         if (found >= this->req_msg.size())
@@ -151,28 +152,48 @@ std::size_t Request::LineParsing(std::string msg)
             this->chunked = true;
         found = found_tmp;
     }
+    this->pstatus = BODY;
     return (found);
 }
 
 void Request::ReqParsing(std::string msg)
 {
     std::size_t found;
-
+    
     this->buffer.append(msg);
-    if (this->buffer.find("\r\n\r\n") == std::string::npos)
+    if (this->buffer.find("\r\n\r\n") == std::string::npos && this->pstatus == FIRST)
         return ;
-    std::cout << "잘 찾고있음 " << std::endl;
-    found = LineParsing(this->buffer);
+    if (this->pstatus == FIRST) {
+        found = LineParsing(this->buffer);
+        found = this->buffer.find("\r\n\r\n", found-1);
+        if (found != this->buffer.size()-4) {
+            std::string tmp = this->buffer.substr(found+4, this->buffer.size()-(found+4));
+            this->buffer.clear();
+            this->buffer.append(tmp);
+        }
+        else
+            this->buffer.clear();
+        if (this->buffer.find("\r\n\r\n") == std::string::npos && this->pstatus == BODY)
+            return ;
+    }
+    if (this->chunked == false && (this->content_length + 4 > this->buffer.size())) {// chunked가 아닌 body
+        return ;
+    }
+    else if (this->chunked == false && (this->content_length + 4 < this->buffer.size())) {
+        this->status = "400";
+        return ;
+    }
+    if (this->chunked == false) {
+        this->buffer = this->buffer.substr(0, this->buffer.size()-4);
+        this->req_msg.append(this->buffer);
+    }
     if (this->chunked)
         controlChunked(found);
     else {
-        if (found != this->req_msg.size() && found < this->req_msg.size()) {
-            std::string buf = this->req_msg.substr(found, this->req_msg.size());
-            for (size_t i = 0; i < buf.size() ; i++)
-                this->body.push_back(buf[i]);
-        }
-        this->body_size = this->body.size();
+        for (size_t i = 0; i < this->buffer.size() ; i++)
+            this->body.push_back(this->buffer[i]);
     }
+    this->body_size = this->body.size();
     if (this->method == "POST") {
         if (this->body_size == 0)
             this->status = "411";
@@ -186,8 +207,7 @@ void Request::ReqParsing(std::string msg)
         if (it == this->headers.end())
             this->status = "411";
     }
-    std::cout << "parsing에서 확인해보자 " << this->parsing_done << std::endl;
-    this->parsing_done = true;
+    this->pstatus = PARSING_DONE;
     return ;
 }
 
@@ -197,7 +217,7 @@ void Request::ReqParsing(std::string msg)
 
 //     // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\nF\r\nin\r\n\r\nchunks.\r\n0\r\n\r\n";
 //     // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nContent-Type: multipart/form-data; yejinkim123456789\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\n2\r\nin\r\n7\r\nchunks.\r\n0\r\n\r\n";
-//     std::string msg = "POST HTTP?name 1.1\nUser-Agent: PostmanRuntime/7.36.1\nAccept: */*\nPostman-Token: f686f1fd-497e-4782-a7ba-19d7424ab7be\nHost: localhost:8080\nAccept-Encoding: gzip, deflate, br\nConnection: keep-alive\nContent-Type: multipart/form-data; boundary=—————————————734697986470657830089921\nContent-Length: 211\r\n\r\n";
+//     std::string msg = "POST HTTP?name 1.1\nContent-Length: 13\r\n\r\nyejinkimzzang\r\n\r\n";
 //     Req.ReqParsing(msg);
 //     Req.PrintRequest();
 //     return (0);

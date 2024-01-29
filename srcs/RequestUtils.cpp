@@ -13,9 +13,8 @@ void  Request::init()
     this->headers.clear();
     this->buffer = "";
     this->query_str = "";
+    this->pstatus = FIRST;
     this->chunked = false;
-    this->body_done = false;
-    this->parsing_done = false;
 }
 
 void Request::PrintRequest()
@@ -31,7 +30,7 @@ void Request::PrintRequest()
             std::cout << "Content-Length: " << it->second << std::endl;
         break;
     }
-    std::cout << "body: " << std::endl;
+    std::cout << "body: ";
     for (std::vector<char>::iterator it = this->body.begin(); it != this->body.end(); ++it) {
         std::cout << *it;
     }
