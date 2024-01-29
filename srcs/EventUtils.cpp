@@ -128,6 +128,7 @@ char** Event::setEnvp(Client& client, std::string cgi_path)
 	char** env = new char*[v_env.size() + 1];
 	for (size_t i = 0; i < v_env.size(); i++)
 		env[i] = strdup(v_env[i].c_str());
+	env[v_env.size()] = NULL;
 
 	return env; 
 }
