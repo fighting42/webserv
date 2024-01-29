@@ -139,9 +139,6 @@ void	Kqueue::startServer()
 					case SEND_RESPONSE:
 						Event::writeSocket(*client, change_list);
 						break;
-					case WRITE_FILE:
-						Event::writeFile(*client, change_list);
-						break;
 					case WRITE_PIPE:
 						Event::writePipe(*client, change_list);
 						break;

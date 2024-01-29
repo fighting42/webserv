@@ -83,41 +83,12 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "handlePost()" << std::endl;
 	
-	time_t now = time(0);
-	struct tm* tm = localtime(&now);
-	char buf[80];
-	strftime(buf, sizeof(buf), "%y%m%d-%H%M%S", tm);
-	std::vector<std::string> v_value = client.server->findValue(client.m_location, "upload_path");
-	std::map<std::string, std::string> m_headers = client.request.getHeaders();
-	std::string path;
-	if (v_value.size() == 0)
-		path = "resources/upload/"; // default
-	else
-		path = v_value[0] + "/";
-	if (access(path.c_str(), F_OK) == -1)
-		return handleError(client, change_list, "404");
-	std::string filename = buf; // 현재날짜시간 + 실제 파일 이름 있으면 추가
-	std::string extension = m_mime_type[m_headers["Content-Type"]];
-
-	client.file_fd = open((path + filename + extension).c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0777);
-	if (client.file_fd == -1)
-		return handleError(client, change_list, "500");
+	char str[17] = "POST SUCCESS!\n";
+	client.response.getBody(str, strlen(str));
+	client.response.makeResponse();
 	
-	if (m_headers["Content-Length"].empty() || client.request.getBody().size() == 0) // body size 0
-	{
-		char str[15] = "POST SUCCESS!\n";
-		client.response.getBody(str, strlen(str));
-		client.response.makeResponse();
-		changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-		client.status = SEND_RESPONSE;
-		return;
-	}
-
-	// body가 file이면 업로드 구현 -> .data()
-	// application/x-www-form-urlencoded ??
-
-	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-	client.status = WRITE_FILE;
+	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
+	client.status = SEND_RESPONSE;
 }
 
 void    Event::handleCgi(Client& client, std::vector<struct kevent>& change_list)

@@ -35,7 +35,7 @@ class Response
 
 		void print();
 		void makeResponse();
-		
+		void init();
 };
 
 #endif
