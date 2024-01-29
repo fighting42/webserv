@@ -53,8 +53,11 @@ std::string Request::removeWhiteSpace(std::string str, int flag)
     if (flag == 1) {
         std::string dump;
         dump = tmp.substr(0, 20);
-        if (dump == "multipart/form-data;")
+        // std::cout << "dump : " << dump << std::endl;
+        // std::cout << "yejin의 부탁 : " << tmp << std::endl;
+        if (dump == "multipart/form-data;") {
             return (tmp);
+        }
     }
     for (idx = 0; idx < tmp.size(); idx++)
     {

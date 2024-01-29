@@ -116,12 +116,12 @@ std::size_t Request::LineParsing(std::string msg)
     std::size_t found = this->req_msg.find("\n");
     std::string first = this->req_msg.substr(0, found);
     std::vector<std::string> firstline;
-    std::cout << "msg\n" << msg << std::endl;
+    // std::cout << "msg\n" << msg << std::endl;
     firstline = ReqSplit(first, ' ');
     this->method = firstline[0];
     if (this->method != "GET" && this->method != "POST" && this->method != "DELETE")
         this->status = "405";
-    std::cout << "method\n" << this->method << std::endl;
+    // std::cout << "method\n" << this->method << std::endl;
     this->uri = checkQuery(firstline[1]);
     // if (this->uri != "HTTP/1.1")
     //     this->status = "404";
@@ -139,7 +139,7 @@ std::size_t Request::LineParsing(std::string msg)
         if (vline == static_cast< std::vector<std::string> > (0))
             break ;
         int flag = 0;
-        if (vline[1] == "Content-Type")
+        if (vline[0] == "Content-Type")
             flag = 1;
         vline[1] = removeWhiteSpace(vline[1], flag);
         this->headers.insert(std::make_pair(vline[0], vline[1]));
@@ -195,8 +195,9 @@ void Request::ReqParsing(std::string msg)
 // {
 //     Request Req;
 
-    // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\nF\r\nin\r\n\r\nchunks.\r\n0\r\n\r\n";
-    // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\n2\r\nin\r\n7\r\nchunks.\r\n0\r\n\r\n";
+//     // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\nF\r\nin\r\n\r\nchunks.\r\n0\r\n\r\n";
+//     // std::string msg = "POST HTTP?name 1.1\nHost: foo.com\nContent-Type: application/x-www-form-urlencoded\nContent-Type: multipart/form-data; yejinkim123456789\nhost: localhost:8080\nTransfer-Encoding: chunked\n4\r\nWiki\r\n5\r\npedia\r\n2\r\nin\r\n7\r\nchunks.\r\n0\r\n\r\n";
+//     std::string msg = "POST HTTP?name 1.1\nUser-Agent: PostmanRuntime/7.36.1\nAccept: */*\nPostman-Token: f686f1fd-497e-4782-a7ba-19d7424ab7be\nHost: localhost:8080\nAccept-Encoding: gzip, deflate, br\nConnection: keep-alive\nContent-Type: multipart/form-data; boundary=—————————————734697986470657830089921\nContent-Length: 211\r\n\r\n";
 //     Req.ReqParsing(msg);
 //     Req.PrintRequest();
 //     return (0);
