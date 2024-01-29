@@ -138,7 +138,10 @@ std::size_t Request::LineParsing(std::string msg)
         vline = ReqSplit(line, ':'); 
         if (vline == static_cast< std::vector<std::string> > (0))
             break ;
-        vline[1] = removeWhiteSpace(vline[1]);
+        int flag = 0;
+        if (vline[1] == "Content-Type")
+            flag = 1;
+        vline[1] = removeWhiteSpace(vline[1], flag);
         this->headers.insert(std::make_pair(vline[0], vline[1]));
         if (vline[0] == "Host")
             this->host = vline[1];

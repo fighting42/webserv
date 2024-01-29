@@ -44,12 +44,14 @@ void Request::setUri(std::string newUri)
     return ;
 }
 
-std::string Request::removeWhiteSpace(std::string str)
+std::string Request::removeWhiteSpace(std::string str, int flag)
 {
     std::string tmp;
     size_t idx;
 
     tmp = str.substr(2, str.size());
+    if (flag == 1)
+        return (tmp);
     for (idx = 0; idx < tmp.size(); idx++)
     {
         if (tmp[idx] == '\t' || tmp[idx] == '\n' || tmp[idx] == '\r' || \

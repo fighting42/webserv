@@ -43,7 +43,7 @@ class Request
     void ReqParsing(std::string msg);
     std::size_t LineParsing(std::string msg);
     std::vector<std::string> ReqSplit(std::string input, char delimiter);
-    std::string removeWhiteSpace(std::string str);
+    std::string removeWhiteSpace(std::string str, int flag);
     std::string checkQuery(std::string uri);
     void controlChunked(size_t found);
     ssize_t hexToDec(const std::string& hex);
