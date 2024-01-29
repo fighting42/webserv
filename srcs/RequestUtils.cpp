@@ -50,8 +50,12 @@ std::string Request::removeWhiteSpace(std::string str, int flag)
     size_t idx;
 
     tmp = str.substr(2, str.size());
-    if (flag == 1)
-        return (tmp);
+    if (flag == 1) {
+        std::string dump;
+        dump = tmp.substr(0, 20);
+        if (dump == "multipart/form-data;")
+            return (tmp);
+    }
     for (idx = 0; idx < tmp.size(); idx++)
     {
         if (tmp[idx] == '\t' || tmp[idx] == '\n' || tmp[idx] == '\r' || \
