@@ -7,6 +7,15 @@
 #include <map>
 #include <vector>
 
+enum pStatus
+{
+  FIRST,
+  HEADER,
+  BODY,
+  BODY_DONE,
+  PARSING_DONE
+};
+
 class Request
 {
 	private:
@@ -22,9 +31,8 @@ class Request
 	  std::vector<char> body;
 	  size_t body_size;
     std::string query_str;
+    pStatus pstatus;
     bool chunked;
-    bool body_done;
-    bool parsing_done;
     
   public:
     Request();
@@ -34,7 +42,7 @@ class Request
 	  const std::string& getUri() const;
 	  const std::string& getHost() const;
 	  const std::string& getStatus() const;
-    const bool& getParsingStatus() const;
+    const pStatus& getParsingStatus() const;
     const std::string& getQueryStr() const;
     const std::vector<char>& getBody() const;
 	  const std::map<std::string, std::string>& getHeaders() const;
