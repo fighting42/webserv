@@ -29,10 +29,13 @@ class Request
     std::string buffer;
 	  size_t content_length;
 	  std::vector<char> body;
+    ssize_t chunkedLineSize;
+    int chunkedSize_chk;
 	  size_t body_size;
     std::string query_str;
     pStatus pstatus;
     bool chunked;
+    std::size_t found;
     
   public:
     Request();

@@ -19,7 +19,7 @@ void  Request::init()
 
 void Request::PrintRequest()
 {
-    std::cout << "\033[1;94m" << std::endl; // blue
+    std::cout << "\033[1;94m"; // blue
     std::cout << "method: " << this->method << std::endl;
     std::cout << "uri: " << this->uri << std::endl;
     std::cout << "version: " << this->version << std::endl;
