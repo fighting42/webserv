@@ -30,13 +30,12 @@ void Event::readSocket(Client& client, std::vector<struct kevent>& change_list)
 
 	char buf[BUFFER_SIZE];
 	client.body_length = read(client.socket_fd, buf, BUFFER_SIZE);
+	buf[client.body_length] = '\0';
 	if (client.body_length <= 0)
 	{
 		changeEvents(change_list, client.socket_fd, EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
 		return handleError(client, change_list, "500");
 	}
-	buf[client.body_length] = '\0';
-	std::cout <<"buf\n" << buf << std::endl;
 	client.request.ReqParsing(buf);
 
 	if (!client.request.getParsingStatus())
@@ -46,7 +45,7 @@ void Event::readSocket(Client& client, std::vector<struct kevent>& change_list)
 	if (client.request.getStatus() != "200")
 		handleError(client, change_list, client.request.getStatus());
 
-	std::cout << "parsing status: "  << client.request.getParsingStatus() << std::endl;
+	// std::cout << "parsing status: "  << client.request.getParsingStatus() << std::endl;
 	std::cout << BLUE << "[request message]" << std::endl << buf << RESET << std::endl;
 }
 
@@ -98,39 +97,11 @@ void Event::readFile(Client& client, std::vector<struct kevent>& change_list)
         changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
         client.status = SEND_RESPONSE;
     }
-    else if (bytesRead == -1)
+    else if (bytesRead <= 0)
 	{
         close(client.file_fd);
         return handleError(client, change_list, "500");
 	}
-}
-
-void Event::writeFile(Client& client, std::vector<struct kevent>& change_list)
-{
-	std::cout << "writeFile()" << std::endl;
-
-	// cgi를 거치지 않았을 때
-	if (client.server->findValue(client.m_location, "cgi_path").empty()) 
-	{
-		std::string str = "";
-		for (size_t i=3; i < client.request.getBody().size(); i++)
-			str += client.request.getBody()[i];
-		client.body = str;
-		client.body_length = str.length();
-	}
-
-	ssize_t write_size = write(client.file_fd, client.body.c_str(), client.body_length);
-	close(client.file_fd);
-	changeEvents(change_list, client.file_fd, EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
-	if (write_size <= 0)
-		return handleError(client, change_list, "500");
-	
-	char str[15] = "POST SUCCESS!\n";
-	client.response.getBody(str, strlen(str));
-	client.response.makeResponse();
-
-	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-	client.status = SEND_RESPONSE;
 }
 
 void	Event::readPipe(Client& client, std::vector<struct kevent>& change_list)
@@ -139,49 +110,24 @@ void	Event::readPipe(Client& client, std::vector<struct kevent>& change_list)
 
 	waitpid(client.pid, NULL, 0);
 
-	// 파일 크기 확인
-	off_t fileSize = lseek(client.pipe_fd[0], 0, SEEK_END);
-	lseek(client.pipe_fd[0], 0, SEEK_SET);
-
-	// 적절한 크기의 버퍼 할당
-	std::vector<char> fileContent(fileSize);
-
-	ssize_t bytesRead = read(client.pipe_fd[0], fileContent.data(), fileSize);
+	char buf[BUFFER_SIZE];
+	client.body_length = read(client.pipe_fd[0], buf, BUFFER_SIZE);
+	buf[client.body_length] = '\0';
 	close(client.pipe_fd[0]);
 	changeEvents(change_list, client.pipe_fd[0], EVFILT_READ, EV_DISABLE | EV_DELETE, 0, 0, &client);
-
-	if (bytesRead == fileSize)
-	{
-		// 읽은 파일 데이터 처리
-		client.body = std::string(fileContent.begin(), fileContent.end());
-		client.body_length = bytesRead;
-
-		if (client.request.getMethod() == "GET")
-		{
-			client.response.getBody(fileContent.data(), fileContent.size());
-			client.response.makeResponse();
-			changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
-			client.status = SEND_RESPONSE;
-		}
-		else if (client.request.getMethod() == "POST")
-		{
-			handlePost(client, change_list);
-		}
-	}
-	else if (bytesRead == -1)
-	{
+	if (client.body_length <= 0)
 		return handleError(client, change_list, "500");
-	}
+	client.body = buf;
 
+	client.response.getBody(buf, client.body_length);
+	client.response.makeResponse();
+	changeEvents(change_list, client.socket_fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &client);
+	client.status = SEND_RESPONSE;
 }
 
 void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
 {
 	std::cout << "writePipe()" << std::endl;
-
-	std::string str = "";
-	for (size_t i=3; i < client.request.getBody().size(); i++)
-		str += client.request.getBody()[i];
 
 	if (client.request.getMethod() == "GET")
 	{
@@ -190,7 +136,8 @@ void	Event::writePipe(Client& client, std::vector<struct kevent>& change_list)
 	}
 	else if (client.request.getMethod() == "POST")
 	{
-		ssize_t write_size = write(client.pipe_fd[1], &str, str.length());
+		std::vector<char> v_body = client.request.getBody();
+		ssize_t write_size = write(client.pipe_fd[1], v_body.data(), v_body.size());
 		changeEvents(change_list, client.pipe_fd[1], EVFILT_WRITE, EV_DISABLE | EV_DELETE, 0, 0, &client);
 		close(client.pipe_fd[1]);
 		if (write_size <= 0)

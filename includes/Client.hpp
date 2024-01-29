@@ -10,12 +10,11 @@
 #include "Server.hpp"
 #include "Event.hpp"
 
-enum Status // 다음에 할 작업으로 status 바꿔주는겁니다요
+enum Status
 {
 	RECV_REQUEST,
 	SEND_RESPONSE,
 	READ_FILE,
-    WRITE_FILE,
     READ_PIPE,
     WRITE_PIPE,
 	DISCONNECT

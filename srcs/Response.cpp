@@ -3,6 +3,15 @@
 
 Response::Response() : status("200") {}
 
+void Response::init()
+{
+	send_buffer.clear();
+	status = "200";
+	content_type = "";
+	headers.clear();
+	body.clear();
+}
+
 Response &Response::operator=(const Response &obj) 
 {
 	send_buffer = obj.send_buffer;

@@ -49,16 +49,17 @@ void	Event::findLocation(Client& client)
 	if (!v_redirect.empty())
 	{
 		std::string new_uri = v_redirect[0];
+		if (new_uri == "/")
+			new_uri = "";
 		new_uri += client.request.getUri().substr(client.location_uri.length());
 		if (new_uri.empty())
 			new_uri = "/";
 		else if (new_uri[0] != '/')
 			new_uri = "/" + new_uri;
 
-		// std::cout << "redirect uri: " << new_uri << std::endl;
-		findLocation(client); // 변경된 uri의 로케이션 블록 저장
-		// client.request.setUri(new_uri); // 필요함
-		// client.response.setStatus("301");
+		client.request.setUri(new_uri);
+		client.response.setStatus("301");
+		findLocation(client);
 	}
 }
 
@@ -120,6 +121,9 @@ char** Event::setEnvp(Client& client, std::string cgi_path)
 		v_env.push_back("CONTENT_LENGTH=" + m_headers["Content-Length"]);
 		v_env.push_back("CONTENT_TYPE=" + m_headers["Content-Type"]);
 	}
+	std::vector<std::string> upload_path = client.server->findValue(client.m_location, "upload_path");
+	if (!upload_path.empty())
+		v_env.push_back("UPLOAD_PATH=" + upload_path[0]);
 
 	char** env = new char*[v_env.size() + 1];
 	for (size_t i = 0; i < v_env.size(); i++)

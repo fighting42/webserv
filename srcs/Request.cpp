@@ -161,7 +161,7 @@ void Request::ReqParsing(std::string msg)
     this->buffer.append(msg);
     if (this->buffer.find("\r\n\r\n") == std::string::npos)
         return ;
-    std::cout << "잘 찾고있음 " << std::endl;
+    // std::cout << "잘 찾고있음 " << std::endl;
     found = LineParsing(this->buffer);
     if (this->chunked)
         controlChunked(found);
@@ -186,7 +186,7 @@ void Request::ReqParsing(std::string msg)
         if (it == this->headers.end())
             this->status = "411";
     }
-    std::cout << "parsing에서 확인해보자 " << this->parsing_done << std::endl;
+    // std::cout << "parsing에서 확인해보자 " << this->parsing_done << std::endl;
     this->parsing_done = true;
     return ;
 }
