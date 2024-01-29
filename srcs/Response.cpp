@@ -71,7 +71,7 @@ void Response::makeResponse() {
 
 	// 바디
 	send_buffer.insert(send_buffer.end(), body.begin(), body.end());
-
+	send_buffer.push_back('\0');
 	//print();
 }
 
