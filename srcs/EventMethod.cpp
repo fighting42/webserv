@@ -23,8 +23,6 @@ void    Event::checkMethod(Client& client, std::vector<struct kevent>& change_li
 
 void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) //디폴트 파일 말고 경로 들어왔을 때 열리도록 추가
 {
-	std::cout << "handleGet()" << std::endl;
-
 	std::string file = getRootpath(client);
 	std::vector<std::string> v_autoindex = client.server->findValue(client.m_location, "autoindex");
     struct stat statbuf;
@@ -63,8 +61,6 @@ void Event::handleGet(Client& client, std::vector<struct kevent>& change_list) /
 
 void    Event::handleDelete(Client& client, std::vector<struct kevent>& change_list)
 {
-	std::cout << "handleDelete()" << std::endl;
-
 	std::string file = getRootpath(client);
 	if (access(file.c_str(), F_OK) == -1) //파일 유효성 검사
 		return handleError(client, change_list, "404");
@@ -81,8 +77,6 @@ void    Event::handleDelete(Client& client, std::vector<struct kevent>& change_l
 
 void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 {
-	std::cout << "handlePost()" << std::endl;
-	
 	char str[17] = "POST SUCCESS!\n";
 	client.response.getBody(str, strlen(str));
 	client.response.makeResponse();
@@ -93,7 +87,6 @@ void	Event::handlePost(Client& client, std::vector<struct kevent>& change_list)
 
 void    Event::handleCgi(Client& client, std::vector<struct kevent>& change_list)
 {
-	std::cout << "handleCgi()" << std::endl;
 	execCgi(client, change_list);
 	fcntl(client.pipe_fd[0], F_SETFL, O_NONBLOCK);
 	fcntl(client.pipe_fd[1], F_SETFL, O_NONBLOCK);
@@ -103,9 +96,7 @@ void    Event::handleCgi(Client& client, std::vector<struct kevent>& change_list
 
 void    Event::handleError(Client& client, std::vector<struct kevent>& change_list, const std::string &error_code)
 {
-	std::cout << "handleError()" << std::endl;
 	client.response.setStatus(error_code);
-
 	std::string error_page;
 	if ((error_page = client.server->findErrorPage(error_code)).empty())
 	{

@@ -17,15 +17,15 @@ void	Config::removeCommentSpace()
 		return;
 	
 	size_t pos = line.find('#');
-    if (pos != std::string::npos) 
-        line = line.substr(0, pos);
+	if (pos != std::string::npos)
+		line = line.substr(0, pos);
 	
 	size_t i = 0;
 	while (isspace(line[i]))
 		i++;
 	line = line.substr(i);
 	
-	i = line.size() - 1;
+	i = line.size();
 	while (isspace(line[i]))
 		i--;
 	line = line.substr(0, i + 1);
